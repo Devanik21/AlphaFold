@@ -86,7 +86,10 @@ if predict_button:
             """
 
             with st.spinner(f"Predicting text-based protein structure with {selected_model_name}..."):
-                response = model.generate_content(prompt)
+                generation_config = genai.types.GenerationConfig(
+                    max_output_tokens=8192
+                )
+                response = model.generate_content(prompt, generation_config=generation_config)
                 text_based_structure = response.text
 
             st.subheader("Predicted Text-Based Structure (from Gemini)")
