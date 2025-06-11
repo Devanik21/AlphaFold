@@ -562,6 +562,8 @@ if st.session_state.current_prediction:
         "SURFACE": "🌐 Surface Properties",
         "COMPARE": "🔄 Structural Comparison",
         "QUALITY": "🏅 Quality Assessment",
+        "DRUGGABLE": "🎯 Druggability Analysis",
+        "CONSERVE": "🛡️ Conservation Score",
         "DATA": "📋 Detailed Data"
     }
     
@@ -706,6 +708,16 @@ if st.session_state.current_prediction:
         # Example: 
         # st.image("path/to/ramachandran_plot.png")
         # st.write("Ramachandran Plot: 98% residues in favored regions.")
+
+    with tab_map["DRUGGABLE"]:
+        st.subheader("Druggability Analysis")
+        st.info("Placeholder for assessing potential druggable pockets and their characteristics.")
+        # Example: st.text("Druggable Score: 0.75 (High Potential)")
+
+    with tab_map["CONSERVE"]:
+        st.subheader("Residue Conservation Scores")
+        st.info("Placeholder for displaying per-residue conservation scores mapped onto the sequence or structure.")
+        # Example: st.plotly_chart(conservation_score_plot)
 
 
     # This was originally tab5, now it's the last tab
