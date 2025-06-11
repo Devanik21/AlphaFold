@@ -562,8 +562,8 @@ if st.session_state.current_prediction:
         "SURFACE": "🌐 Surface Properties",
         "COMPARE": "🔄 Structural Comparison",
         "QUALITY": "🏅 Quality Assessment",
-        "DRUGGABLE": "🎯 Druggability Analysis",
-        "CONSERVE": "🛡️ Conservation Score",
+        "DRUG": "🎯 Druggability Analysis", # Shrunk from DRUGGABLE
+        "CONS": "🛡️ Conservation Score",   # Shrunk from CONSERVE
         "DATA": "📋 Detailed Data"
     }
     
