@@ -2,13 +2,22 @@ import streamlit as st
 
 st.set_page_config(layout="wide", page_title="AlphaFold-like App")
 
+# --- Preloaded Example ---
+EXAMPLE_SEQUENCE_NAME = "Example Protein"
+EXAMPLE_SEQUENCE = ">ExampleProtein\nMQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
+
 st.title("Protein Structure Prediction (AlphaFold-like UI)")
 
 st.sidebar.header("Input")
+
+if st.sidebar.button("Load Example Sequence"):
+    st.session_state.sequence_input = EXAMPLE_SEQUENCE
+
 sequence_input = st.sidebar.text_area(
     "Enter protein sequence (FASTA format or raw sequence):",
     height=250,
-    placeholder=">MyProtein\nMQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
+    placeholder=">MyProtein\nMQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG",
+    key="sequence_input" # Add a key to manage state
 )
 
 api_key_input = st.sidebar.text_input(
