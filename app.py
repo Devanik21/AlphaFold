@@ -549,15 +549,26 @@ if st.session_state.current_prediction:
         """, unsafe_allow_html=True)
     
     # Tabs for different analyses
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📊 Structure Overview", 
-        "🎯 AI Analysis", 
-        "📈 Confidence Analysis",
-        "🧬 Domain Architecture",
-        "📋 Detailed Data"
-    ])
+    TAB_CODES = {
+        "STRUCT": "📊 Structure Overview",
+        "AI": "🎯 AI Analysis",
+        "CONF": "📈 Confidence Analysis",
+        "DOMAIN": "🧬 Domain Architecture",
+        "DATA": "📋 Detailed Data"
+    }
     
-    with tab1:
+    tab_keys = list(TAB_CODES.keys())
+    tab_struct, tab_ai, tab_conf, tab_domain, tab_data = st.tabs(tab_keys)
+
+    # Display tab legend in sidebar
+    with st.sidebar:
+        st.subheader("Tab Legend")
+        for code, full_name in TAB_CODES.items():
+            st.markdown(f"- **{code}**: {full_name}")
+        st.divider() # Add a divider after the legend if other sidebar items follow
+
+    
+    with tab_struct:
         st.subheader("Structural Prediction Visualization")
         fig = create_structure_plot(data)
         st.plotly_chart(fig, use_container_width=True)
@@ -581,14 +592,14 @@ if st.session_state.current_prediction:
                 percentage = (count / len(data['secondary_structure'])) * 100
                 st.write(f"• {ss}: {count} residues ({percentage:.1f}%)")
     
-    with tab2:
+    with tab_ai:
         st.subheader("AI-Generated Structural Analysis")
         if 'ai_analysis' in data:
             st.markdown(data['ai_analysis'])
         else:
             st.info("AI analysis not available")
     
-    with tab3:
+    with tab_conf:
         st.subheader("Confidence Score Analysis")
         
         col1, col2 = st.columns(2)
@@ -620,7 +631,7 @@ if st.session_state.current_prediction:
             if low_conf_regions:
                 st.warning(f"Low confidence regions: {len(low_conf_regions)} residues")
     
-    with tab4:
+    with tab_domain:
         st.subheader("Domain Architecture Analysis")
         
         if data['domains']:
@@ -642,7 +653,7 @@ if st.session_state.current_prediction:
         else:
             st.info("No distinct domains identified in this protein")
     
-    with tab5:
+    with tab_data:
         st.subheader("Detailed Prediction Data")
         
         # Create detailed dataframe
