@@ -795,6 +795,11 @@ if st.session_state.current_prediction:
                 elif score < 50:
                     low_conf_regions.append(i + 1)
             
+            if high_conf_regions:
+                st.success(f"High confidence regions: {len(high_conf_regions)} residues")
+            if low_conf_regions:
+                st.warning(f"Low confidence regions: {len(low_conf_regions)} residues")
+
             st.subheader("Advanced Confidence Analysis Tools")
             with st.expander("📊 Per-Residue Confidence Plot"):
                 st.info("Placeholder for detailed per-residue confidence visualization. This plot helps identify specific regions of varying prediction reliability.")
@@ -847,11 +852,6 @@ if st.session_state.current_prediction:
             with st.expander("🔄 Confidence Stability Over Time (Simulated)"):
                 st.info("Placeholder for simulating how confidence in certain regions might change if dynamics were considered (conceptual).")
             # Removed 25 generic placeholder tools
-            
-            if high_conf_regions:
-                st.success(f"High confidence regions: {len(high_conf_regions)} residues")
-            if low_conf_regions:
-                st.warning(f"Low confidence regions: {len(low_conf_regions)} residues")
     
     with tab_map["DOMAIN"]:
         st.subheader("Domain Architecture Analysis")
