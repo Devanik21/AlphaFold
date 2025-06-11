@@ -46,7 +46,6 @@ if predict_button:
         if len(sequence_input.splitlines()) > 5:
             display_sequence += "\n..."
         st.text(display_sequence)
-        st.info(f"Using API Key: {'*' * (len(api_key_input) - 4) + api_key_input[-4:] if api_key_input else 'Not Provided'}")
 
         # --- Gemini API Call ---
         try:
