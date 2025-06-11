@@ -21,6 +21,13 @@ sequence_input = st.sidebar.text_area(
     key="sequence_input" # Add a key to manage state
 )
 
+AVAILABLE_MODELS = {
+    "Gemini 1.5 Flash (Latest)": "gemini-1.5-flash",
+    "Gemini 2.0 Flash (Latest)": "gemini-2.0-flash", # Alias for gemini-1.0-pro
+    "Gemini 2.5 Flash (Latest)": "gemini-2.5-flash",
+}
+selected_model_name = st.sidebar.selectbox("Choose a Gemini Model:", options=list(AVAILABLE_MODELS.keys()))
+
 api_key_input = st.sidebar.text_input(
     "Enter your API Key:",
     type="password",
@@ -50,7 +57,8 @@ if predict_button:
         # --- Gemini API Call ---
         try:
             genai.configure(api_key=api_key_input)
-            model = genai.GenerativeModel('gemini-1.5-flash-latest') # You can choose your preferred model
+            chosen_model_id = AVAILABLE_MODELS[selected_model_name]
+            model = genai.GenerativeModel(chosen_model_id)
 
             prompt = f"""
             Analyze the following protein sequence and provide a textual description of its likely structure.
@@ -67,7 +75,7 @@ if predict_button:
             Provide a detailed, text-based structural description.
             """
 
-            with st.spinner("Predicting text-based protein structure with Gemini..."):
+            with st.spinner(f"Predicting text-based protein structure with {selected_model_name}..."):
                 response = model.generate_content(prompt)
                 text_based_structure = response.text
 
