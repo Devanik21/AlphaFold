@@ -554,14 +554,14 @@ if st.session_state.current_prediction:
         "AI": "🎯 AI Analysis",
         "CONF": "📈 Confidence Analysis",
         "DOMAIN": "🧬 Domain Architecture",
-        "INTERACT": "🔗 Interaction Network",
-        "MUTATE": "🔬 Mutational Analysis",
-        "DYNAMICS": "⚙️ Molecular Dynamics",
-        "LIGAND": "💊 Ligand Binding",
-        "EVOLVE": "🌳 Evolutionary Trace",
-        "SURFACE": "🌐 Surface Properties",
-        "COMPARE": "🔄 Structural Comparison",
-        "QUALITY": "🏅 Quality Assessment",
+        "INT": "🔗 Interaction Network",      # Shrunk from INTERACT
+        "MUT": "🔬 Mutational Analysis",       # Shrunk from MUTATE
+        "DYN": "⚙️ Molecular Dynamics",       # Shrunk from DYNAMICS
+        "LIG": "💊 Ligand Binding",           # Shrunk from LIGAND
+        "EVO": "🌳 Evolutionary Trace",       # Shrunk from EVOLVE
+        "SURF": "🌐 Surface Properties",      # Shrunk from SURFACE
+        "COMP": "🔄 Structural Comparison",   # Shrunk from COMPARE
+        "QUAL": "🏅 Quality Assessment",      # Shrunk from QUALITY
         "DRUG": "🎯 Druggability Analysis", # Shrunk from DRUGGABLE
         "CONS": "🛡️ Conservation Score",   # Shrunk from CONSERVE
         "DATA": "📋 Detailed Data"
