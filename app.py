@@ -671,54 +671,53 @@ if st.session_state.current_prediction:
         else:
             st.info("No distinct domains identified in this protein")
     
-    with tab_map["INTERACT"]:
+    with tab_map["INT"]:
         st.subheader("Predicted Interaction Network")
         st.info("Placeholder for protein-protein or protein-ligand interaction network visualization and analysis.")
         # Example: st.image("path/to/interaction_network_plot.png")
 
-    with tab_map["MUTATE"]:
+    with tab_map["MUT"]:
         st.subheader("In Silico Mutational Analysis")
         st.info("Placeholder for predicting effects of mutations on structure and stability (e.g., ΔΔG predictions).")
         # Example: st.dataframe(mock_mutation_effect_data)
 
-    with tab_map["DYNAMICS"]:
+    with tab_map["DYN"]:
         st.subheader("Molecular Dynamics Simulation Insights")
         st.info("Placeholder for displaying results from short MD simulations (e.g., RMSF, conformational changes).")
         # Example: st.plotly_chart(md_rmsf_plot)
 
-    with tab_map["LIGAND"]:
+    with tab_map["LIG"]:
         st.subheader("Ligand Binding Site Prediction")
         st.info("Placeholder for identifying potential ligand binding pockets and their properties.")
         # Example: st.text("Predicted binding site residues: 10-15, 45-50")
 
-    with tab_map["EVOLVE"]:
+    with tab_map["EVO"]:
         st.subheader("Evolutionary Trace Analysis")
         st.info("Placeholder for highlighting conserved residues based on evolutionary information.")
         # Example: st.plotly_chart(evolutionary_trace_plot)
 
-    with tab_map["SURFACE"]:
+    with tab_map["SURF"]:
         st.subheader("Surface Properties Analysis")
         st.info("Placeholder for visualizing electrostatic potential, hydrophobicity, and accessibility on the protein surface.")
         # Example: st.image("path/to/surface_electrostatics.png")
 
-    with tab_map["COMPARE"]:
+    with tab_map["COMP"]:
         st.subheader("Structural Comparison (vs. PDB)")
         st.info("Placeholder for comparing the predicted structure against known structures in the PDB (e.g., RMSD values, alignments).")
         # Example: st.text("Closest PDB hit: XXXX (RMSD: Y.Y Å)")
 
-    with tab_map["QUALITY"]:
+    with tab_map["QUAL"]:
         st.subheader("Advanced Quality Assessment")
         st.info("Placeholder for detailed model quality metrics beyond pLDDT (e.g., Ramachandran plot analysis, bond lengths/angles).")
         # Example: 
         # st.image("path/to/ramachandran_plot.png")
         # st.write("Ramachandran Plot: 98% residues in favored regions.")
 
-    with tab_map["DRUGGABLE"]:
+    with tab_map["DRUG"]:
         st.subheader("Druggability Analysis")
         st.info("Placeholder for assessing potential druggable pockets and their characteristics.")
         # Example: st.text("Druggable Score: 0.75 (High Potential)")
-
-    with tab_map["CONSERVE"]:
+    with tab_map["CONS"]:
         st.subheader("Residue Conservation Scores")
         st.info("Placeholder for displaying per-residue conservation scores mapped onto the sequence or structure.")
         # Example: st.plotly_chart(conservation_score_plot)
