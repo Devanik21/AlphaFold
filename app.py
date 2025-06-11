@@ -846,9 +846,7 @@ if st.session_state.current_prediction:
                 st.info("Placeholder for identifying specific points in the sequence where confidence significantly drops or increases.")
             with st.expander("🔄 Confidence Stability Over Time (Simulated)"):
                 st.info("Placeholder for simulating how confidence in certain regions might change if dynamics were considered (conceptual).")
-            for i in range(25): # Adding more generic placeholders to reach 50
-                with st.expander(f"🛠️ Confidence Tool {i+1}"):
-                    st.info(f"Placeholder for Confidence Analysis Tool {i+1}. This tool provides insights into prediction reliability for specific structural aspects.")
+            # Removed 25 generic placeholder tools
             
             if high_conf_regions:
                 st.success(f"High confidence regions: {len(high_conf_regions)} residues")
