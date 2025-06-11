@@ -554,11 +554,23 @@ if st.session_state.current_prediction:
         "AI": "🎯 AI Analysis",
         "CONF": "📈 Confidence Analysis",
         "DOMAIN": "🧬 Domain Architecture",
+        "INTERACT": "🔗 Interaction Network",
+        "MUTATE": "🔬 Mutational Analysis",
+        "DYNAMICS": "⚙️ Molecular Dynamics",
+        "LIGAND": "💊 Ligand Binding",
+        "EVOLVE": "🌳 Evolutionary Trace",
+        "SURFACE": "🌐 Surface Properties",
+        "COMPARE": "🔄 Structural Comparison",
+        "QUALITY": "🏅 Quality Assessment",
         "DATA": "📋 Detailed Data"
     }
     
     tab_keys = list(TAB_CODES.keys())
-    tab_struct, tab_ai, tab_conf, tab_domain, tab_data = st.tabs(tab_keys)
+    # Unpack all tabs based on the order in TAB_CODES
+    tabs_list = st.tabs(tab_keys)
+    
+    # Assign tabs to meaningful variables based on their codes
+    tab_map = {code: tab for code, tab in zip(tab_keys, tabs_list)}
 
     # Display tab legend in sidebar
     with st.sidebar:
@@ -568,7 +580,7 @@ if st.session_state.current_prediction:
         st.divider() # Add a divider after the legend if other sidebar items follow
 
     
-    with tab_struct:
+    with tab_map["STRUCT"]:
         st.subheader("Structural Prediction Visualization")
         fig = create_structure_plot(data)
         st.plotly_chart(fig, use_container_width=True)
@@ -592,14 +604,14 @@ if st.session_state.current_prediction:
                 percentage = (count / len(data['secondary_structure'])) * 100
                 st.write(f"• {ss}: {count} residues ({percentage:.1f}%)")
     
-    with tab_ai:
+    with tab_map["AI"]:
         st.subheader("AI-Generated Structural Analysis")
         if 'ai_analysis' in data:
             st.markdown(data['ai_analysis'])
         else:
             st.info("AI analysis not available")
     
-    with tab_conf:
+    with tab_map["CONF"]:
         st.subheader("Confidence Score Analysis")
         
         col1, col2 = st.columns(2)
@@ -631,7 +643,7 @@ if st.session_state.current_prediction:
             if low_conf_regions:
                 st.warning(f"Low confidence regions: {len(low_conf_regions)} residues")
     
-    with tab_domain:
+    with tab_map["DOMAIN"]:
         st.subheader("Domain Architecture Analysis")
         
         if data['domains']:
@@ -653,7 +665,51 @@ if st.session_state.current_prediction:
         else:
             st.info("No distinct domains identified in this protein")
     
-    with tab_data:
+    with tab_map["INTERACT"]:
+        st.subheader("Predicted Interaction Network")
+        st.info("Placeholder for protein-protein or protein-ligand interaction network visualization and analysis.")
+        # Example: st.image("path/to/interaction_network_plot.png")
+
+    with tab_map["MUTATE"]:
+        st.subheader("In Silico Mutational Analysis")
+        st.info("Placeholder for predicting effects of mutations on structure and stability (e.g., ΔΔG predictions).")
+        # Example: st.dataframe(mock_mutation_effect_data)
+
+    with tab_map["DYNAMICS"]:
+        st.subheader("Molecular Dynamics Simulation Insights")
+        st.info("Placeholder for displaying results from short MD simulations (e.g., RMSF, conformational changes).")
+        # Example: st.plotly_chart(md_rmsf_plot)
+
+    with tab_map["LIGAND"]:
+        st.subheader("Ligand Binding Site Prediction")
+        st.info("Placeholder for identifying potential ligand binding pockets and their properties.")
+        # Example: st.text("Predicted binding site residues: 10-15, 45-50")
+
+    with tab_map["EVOLVE"]:
+        st.subheader("Evolutionary Trace Analysis")
+        st.info("Placeholder for highlighting conserved residues based on evolutionary information.")
+        # Example: st.plotly_chart(evolutionary_trace_plot)
+
+    with tab_map["SURFACE"]:
+        st.subheader("Surface Properties Analysis")
+        st.info("Placeholder for visualizing electrostatic potential, hydrophobicity, and accessibility on the protein surface.")
+        # Example: st.image("path/to/surface_electrostatics.png")
+
+    with tab_map["COMPARE"]:
+        st.subheader("Structural Comparison (vs. PDB)")
+        st.info("Placeholder for comparing the predicted structure against known structures in the PDB (e.g., RMSD values, alignments).")
+        # Example: st.text("Closest PDB hit: XXXX (RMSD: Y.Y Å)")
+
+    with tab_map["QUALITY"]:
+        st.subheader("Advanced Quality Assessment")
+        st.info("Placeholder for detailed model quality metrics beyond pLDDT (e.g., Ramachandran plot analysis, bond lengths/angles).")
+        # Example: 
+        # st.image("path/to/ramachandran_plot.png")
+        # st.write("Ramachandran Plot: 98% residues in favored regions.")
+
+
+    # This was originally tab5, now it's the last tab
+    with tab_map["DATA"]:
         st.subheader("Detailed Prediction Data")
         
         # Create detailed dataframe
