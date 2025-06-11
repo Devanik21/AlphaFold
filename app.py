@@ -615,151 +615,151 @@ if st.session_state.current_prediction:
             st.info("📊 Placeholder for Ramachandran plot visualization and outlier analysis. This plot helps assess the conformational quality of the protein backbone.")
 
         with st.expander("Residue Contact Map"):
-            st.info("🗺️ Placeholder for visualizing a contact map showing interacting residues within the protein structure. Useful for understanding tertiary structure and folding.")
+            st.info("📊 🗺️ Placeholder for visualizing a contact map showing interacting residues within the protein structure. Useful for understanding tertiary structure and folding.")
 
         with st.expander("Solvent Accessible Surface Area (SASA)"):
-            st.info("💧 Placeholder for per-residue SASA plot and total SASA calculation. Indicates which residues are exposed to solvent.")
+            st.info("📊 💧 Placeholder for per-residue SASA plot and total SASA calculation. Indicates which residues are exposed to solvent.")
 
         with st.expander("Radius of Gyration (Rg) Analysis"):
-            st.info("📏 Placeholder for calculating and plotting the Radius of Gyration. Provides a measure of the protein's compactness.")
+            st.info("📊 📏 Placeholder for calculating and plotting the Radius of Gyration. Provides a measure of the protein's compactness.")
 
         with st.expander("Hydrogen Bond Network"):
-            st.info("🔗 Placeholder for identifying and visualizing the hydrogen bond network within the protein structure. Critical for stability.")
+            st.info("📊 🔗 Placeholder for identifying and visualizing the hydrogen bond network within the protein structure. Critical for stability.")
 
         with st.expander("Salt Bridge Analysis"):
-            st.info("🌉 Placeholder for detecting and listing potential salt bridges. Important for protein stability and interactions.")
+            st.info("📊 🌉 Placeholder for detecting and listing potential salt bridges. Important for protein stability and interactions.")
 
         with st.expander("Surface Cavity and Pocket Detection"):
-            st.info("🕳️ Placeholder for identifying and characterizing cavities and pockets on the protein surface. Relevant for ligand binding and enzyme active sites.")
+            st.info("📊 🕳️ Placeholder for identifying and characterizing cavities and pockets on the protein surface. Relevant for ligand binding and enzyme active sites.")
 
         with st.expander("Local Geometry Check (Bond Lengths/Angles)"):
-            st.info("📐 Placeholder for analyzing local structural geometry, such as bond lengths and angles, to identify strained or unusual conformations.")
+            st.info("📊 📐 Placeholder for analyzing local structural geometry, such as bond lengths and angles, to identify strained or unusual conformations.")
 
         with st.expander("Torsion Angle (Phi/Psi) Distribution"):
-            st.info("🔄 Placeholder for plotting the distribution of Phi and Psi backbone torsion angles. Complements the Ramachandran plot.")
+            st.info("📊 🔄 Placeholder for plotting the distribution of Phi and Psi backbone torsion angles. Complements the Ramachandran plot.")
 
         with st.expander("Intra-Protein Interaction Energy"):
-            st.info("⚡ Placeholder for estimating non-bonded interaction energies (e.g., van der Waals, electrostatic) between different parts of the protein.")
+            st.info("📊 ⚡ Placeholder for estimating non-bonded interaction energies (e.g., van der Waals, electrostatic) between different parts of the protein.")
 
         with st.expander("Protein B-Factor Analysis"):
-            st.info("🌡️ Placeholder for visualizing and analyzing B-factors (temperature factors) to assess atomic displacement and flexibility.")
+            st.info("📊 🌡️ Placeholder for visualizing and analyzing B-factors (temperature factors) to assess atomic displacement and flexibility.")
 
         with st.expander("Tertiary Structure Superposition"):
-            st.info("🧬 Placeholder for superimposing the predicted structure onto a reference structure and calculating RMSD.")
+            st.info("📊 🧬 Placeholder for superimposing the predicted structure onto a reference structure and calculating RMSD.")
 
         with st.expander("Quaternary Structure Assembly Prediction"):
-            st.info("🧩 Placeholder for predicting how multiple protein subunits might assemble.")
+            st.info("📊 🧩 Placeholder for predicting how multiple protein subunits might assemble.")
 
         with st.expander("Electrostatic Potential Surface"):
-            st.info("💡 Placeholder for calculating and visualizing the electrostatic potential on the protein surface.")
+            st.info("📊 💡 Placeholder for calculating and visualizing the electrostatic potential on the protein surface.")
 
         with st.expander("Hydrophobicity Surface Map"):
-            st.info("🌊 Placeholder for mapping hydrophobic and hydrophilic regions on the protein surface.")
+            st.info("📊 🌊 Placeholder for mapping hydrophobic and hydrophilic regions on the protein surface.")
 
         with st.expander("Predicted Stability (ΔG)"):
-            st.info("⚖️ Placeholder for estimating the overall folding free energy (ΔG) of the protein structure.")
+            st.info("📊 ⚖️ Placeholder for estimating the overall folding free energy (ΔG) of the protein structure.")
 
         with st.expander("Conformational Ensemble Generation"):
-            st.info("🌀 Placeholder for generating a representative ensemble of protein conformations.")
+            st.info("📊 🌀 Placeholder for generating a representative ensemble of protein conformations.")
 
         with st.expander("Normal Mode Analysis (NMA)"):
-            st.info("🎶 Placeholder for performing NMA to predict collective motions and flexibility.")
+            st.info("📊 🎶 Placeholder for performing NMA to predict collective motions and flexibility.")
 
         with st.expander("Disulfide Bond Prediction"):
-            st.info("🔗 Placeholder for identifying potential disulfide bonds based on cysteine proximity and geometry.")
+            st.info("📊 🔗 Placeholder for identifying potential disulfide bonds based on cysteine proximity and geometry.")
 
         with st.expander("Post-Translational Modification (PTM) Site Analysis"):
-            st.info("🏷️ Placeholder for analyzing structural context of predicted PTM sites.")
+            st.info("📊 🏷️ Placeholder for analyzing structural context of predicted PTM sites.")
 
         with st.expander("Aggregation Prone Region Prediction"):
-            st.info("🧱 Placeholder for identifying regions in the structure prone to aggregation.")
+            st.info("📊 🧱 Placeholder for identifying regions in the structure prone to aggregation.")
 
         with st.expander("Structural Alignment (Multiple Structures)"):
-            st.info("🖇️ Placeholder for aligning multiple protein structures and identifying conserved cores.")
+            st.info("📊 🖇️ Placeholder for aligning multiple protein structures and identifying conserved cores.")
 
         with st.expander("Loop Region Modeling & Refinement"):
-            st.info("➰ Placeholder for tools to model or refine flexible loop regions in the structure.")
+            st.info("📊 ➰ Placeholder for tools to model or refine flexible loop regions in the structure.")
 
         with st.expander("Active Site Characterization"):
-            st.info("🎯 Placeholder for detailed analysis of predicted active site geometry and residues.")
+            st.info("📊 🎯 Placeholder for detailed analysis of predicted active site geometry and residues.")
 
         with st.expander("Metal Ion Coordination Site Prediction"):
-            st.info("💎 Placeholder for identifying potential metal ion binding sites and their coordinating residues.")
+            st.info("📊 💎 Placeholder for identifying potential metal ion binding sites and their coordinating residues.")
 
         with st.expander("Glycosylation Site Structural Context"):
-            st.info("🍬 Placeholder for analyzing the structural environment of potential glycosylation sites.")
+            st.info("📊 🍬 Placeholder for analyzing the structural environment of potential glycosylation sites.")
 
         with st.expander("Protein Cleavage Site Accessibility"):
-            st.info("✂️ Placeholder for assessing the solvent accessibility and structural context of predicted cleavage sites.")
+            st.info("📊 ✂️ Placeholder for assessing the solvent accessibility and structural context of predicted cleavage sites.")
 
         with st.expander("Structural Motif Search (e.g., Helix-Turn-Helix)"):
-            st.info("🔍 Placeholder for searching for known structural motifs within the predicted structure.")
+            st.info("📊 🔍 Placeholder for searching for known structural motifs within the predicted structure.")
 
         with st.expander("Inter-Residue Distance Matrix Plot"):
-            st.info("📉 Placeholder for visualizing the matrix of distances between all pairs of residues.")
+            st.info("📊 📉 Placeholder for visualizing the matrix of distances between all pairs of residues.")
 
         with st.expander("Packing Density & Void Analysis"):
-            st.info("📦 Placeholder for calculating local and global packing density and identifying internal voids.")
+            st.info("📊 📦 Placeholder for calculating local and global packing density and identifying internal voids.")
 
         with st.expander("Protein Symmetry Detection"):
-            st.info("💠 Placeholder for detecting and analyzing internal or oligomeric symmetry in the structure.")
+            st.info("📊 💠 Placeholder for detecting and analyzing internal or oligomeric symmetry in the structure.")
 
         with st.expander("Co-evolutionary Contact Prediction Mapping"):
-            st.info("💞 Placeholder for mapping predicted co-evolutionary contacts onto the 3D structure.")
+            st.info("📊 💞 Placeholder for mapping predicted co-evolutionary contacts onto the 3D structure.")
 
         with st.expander("Structural Water Molecule Prediction"):
-            st.info("💧 Placeholder for predicting the locations of structurally important water molecules.")
+            st.info("📊 💧 Placeholder for predicting the locations of structurally important water molecules.")
 
         with st.expander("Ion Channel Pore Radius Profiling"):
-            st.info("🚇 Placeholder for calculating and visualizing the pore radius profile for channel-like structures.")
+            st.info("📊 🚇 Placeholder for calculating and visualizing the pore radius profile for channel-like structures.")
 
         with st.expander("Protein Surface Curvature Analysis"):
-            st.info("🟠 Placeholder for analyzing and visualizing the curvature of the protein surface.")
+            st.info("📊 🟠 Placeholder for analyzing and visualizing the curvature of the protein surface.")
 
         with st.expander("Helix/Sheet Packing Geometry"):
-            st.info("📚 Placeholder for analyzing the angles and distances between packed helices and sheets.")
+            st.info("📊 📚 Placeholder for analyzing the angles and distances between packed helices and sheets.")
 
         with st.expander("Fold Recognition & Classification"):
-            st.info("📁 Placeholder for comparing the predicted fold against a library of known folds (e.g., CATH, SCOP).")
+            st.info("📊 📁 Placeholder for comparing the predicted fold against a library of known folds (e.g., CATH, SCOP).")
 
         with st.expander("Cryo-EM Map Fitting Score (Simulated)"):
-            st.info("🧊 Placeholder for simulating how well the structure might fit into a hypothetical Cryo-EM density map.")
+            st.info("📊 🧊 Placeholder for simulating how well the structure might fit into a hypothetical Cryo-EM density map.")
 
         with st.expander("NMR Chemical Shift Prediction"):
-            st.info("📡 Placeholder for predicting NMR chemical shifts based on the 3D structure.")
+            st.info("📊 📡 Placeholder for predicting NMR chemical shifts based on the 3D structure.")
 
         with st.expander("SAXS Profile Prediction"):
-            st.info("✨ Placeholder for predicting the Small-Angle X-ray Scattering profile from the structure.")
+            st.info("📊 ✨ Placeholder for predicting the Small-Angle X-ray Scattering profile from the structure.")
 
         with st.expander("Crystallization Propensity Score"):
-            st.info("❄️ Placeholder for predicting the likelihood of the protein to crystallize based on surface features.")
+            st.info("📊 ❄️ Placeholder for predicting the likelihood of the protein to crystallize based on surface features.")
 
         with st.expander("Interface Residue Propensity (for PPI)"):
-            st.info("🤝 Placeholder for analyzing residue properties at potential protein-protein interaction interfaces.")
+            st.info("📊 🤝 Placeholder for analyzing residue properties at potential protein-protein interaction interfaces.")
 
         with st.expander("Elastic Network Model Analysis"):
-            st.info("🕸️ Placeholder for building and analyzing an elastic network model to study protein dynamics.")
+            st.info("📊 🕸️ Placeholder for building and analyzing an elastic network model to study protein dynamics.")
 
         with st.expander("Fragment-Based Docking Suitability"):
-            st.info("💊 Placeholder for assessing the suitability of pockets for fragment-based drug discovery.")
+            st.info("📊 💊 Placeholder for assessing the suitability of pockets for fragment-based drug discovery.")
 
         with st.expander("Hot Spot Residue Prediction (Interaction)"):
-            st.info("🔥 Placeholder for predicting 'hot spot' residues critical for protein interactions.")
+            st.info("📊 🔥 Placeholder for predicting 'hot spot' residues critical for protein interactions.")
 
         with st.expander("Protein Tunnelling Analysis"):
-            st.info("🕳️ Placeholder for identifying and characterizing tunnels and channels within the protein structure.")
+            st.info("📊 🕳️ Placeholder for identifying and characterizing tunnels and channels within the protein structure.")
 
         with st.expander("Hydrodynamic Properties Estimation (e.g., Stokes Radius)"):
-            st.info("💨 Placeholder for estimating hydrodynamic properties from the protein structure.")
+            st.info("📊 💨 Placeholder for estimating hydrodynamic properties from the protein structure.")
 
         with st.expander("Structure-Based Antibody Epitope Prediction"):
-            st.info("🛡️ Placeholder for predicting conformational B-cell epitopes on the protein surface.")
+            st.info("📊 🛡️ Placeholder for predicting conformational B-cell epitopes on the protein surface.")
 
         with st.expander("Protein Dipole Moment Calculation"):
-            st.info("🧭 Placeholder for calculating the overall dipole moment of the protein structure.")
+            st.info("📊 🧭 Placeholder for calculating the overall dipole moment of the protein structure.")
 
         with st.expander("Rotamer Library Analysis"):
-            st.info("📚 Placeholder for analyzing side-chain conformations against known rotamer libraries.")
+            st.info("📊 📚 Placeholder for analyzing side-chain conformations against known rotamer libraries.")
     
     with tab_map["AI"]:
         st.subheader("AI-Generated Structural Analysis")
