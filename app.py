@@ -1,18 +1,28 @@
 import streamlit as st
 import google.generativeai as genai
+import random
+import string
 
 st.set_page_config(layout="wide", page_title="AlphaFold-like App")
 
 # --- Preloaded Example ---
 EXAMPLE_SEQUENCE_NAME = "Example Protein"
-EXAMPLE_SEQUENCE = ">ExampleProtein\nMQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
+# Standard one-letter amino acid codes
+AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY"
+
+def generate_random_protein_sequence(min_len=60, max_len=100):
+    """Generates a random protein sequence in FASTA format."""
+    length = random.randint(min_len, max_len)
+    sequence = "".join(random.choice(AMINO_ACIDS) for _ in range(length))
+    protein_id = f"RandomProtein_{random.randint(100, 999)}"
+    return f">{protein_id}\n{sequence}"
 
 st.title("Protein Structure Prediction (AlphaFold-like UI)")
 
 st.sidebar.header("Input")
 
 if st.sidebar.button("Load Example Sequence"):
-    st.session_state.sequence_input = EXAMPLE_SEQUENCE
+    st.session_state.sequence_input = generate_random_protein_sequence()
 
 sequence_input = st.sidebar.text_area(
     "Enter protein sequence (FASTA format or raw sequence):",
