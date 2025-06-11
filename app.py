@@ -609,6 +609,37 @@ if st.session_state.current_prediction:
             for ss, count in ss_counts.items():
                 percentage = (count / len(data['secondary_structure'])) * 100
                 st.write(f"• {ss}: {count} residues ({percentage:.1f}%)")
+        
+        st.subheader("Advanced Structural Analysis Tools")
+        with st.expander("Ramachandran Plot Analysis"):
+            st.info("Placeholder for Ramachandran plot visualization and outlier analysis. This plot helps assess the conformational quality of the protein backbone.")
+
+        with st.expander("Residue Contact Map"):
+            st.info("Placeholder for visualizing a contact map showing interacting residues within the protein structure. Useful for understanding tertiary structure and folding.")
+
+        with st.expander("Solvent Accessible Surface Area (SASA)"):
+            st.info("Placeholder for per-residue SASA plot and total SASA calculation. Indicates which residues are exposed to solvent.")
+
+        with st.expander("Radius of Gyration (Rg) Analysis"):
+            st.info("Placeholder for calculating and plotting the Radius of Gyration. Provides a measure of the protein's compactness.")
+
+        with st.expander("Hydrogen Bond Network"):
+            st.info("Placeholder for identifying and visualizing the hydrogen bond network within the protein structure. Critical for stability.")
+
+        with st.expander("Salt Bridge Analysis"):
+            st.info("Placeholder for detecting and listing potential salt bridges. Important for protein stability and interactions.")
+
+        with st.expander("Surface Cavity and Pocket Detection"):
+            st.info("Placeholder for identifying and characterizing cavities and pockets on the protein surface. Relevant for ligand binding and enzyme active sites.")
+
+        with st.expander("Local Geometry Check (Bond Lengths/Angles)"):
+            st.info("Placeholder for analyzing local structural geometry, such as bond lengths and angles, to identify strained or unusual conformations.")
+
+        with st.expander("Torsion Angle (Phi/Psi) Distribution"):
+            st.info("Placeholder for plotting the distribution of Phi and Psi backbone torsion angles. Complements the Ramachandran plot.")
+
+        with st.expander("Intra-Protein Interaction Energy"):
+            st.info("Placeholder for estimating non-bonded interaction energies (e.g., van der Waals, electrostatic) between different parts of the protein.")
     
     with tab_map["AI"]:
         st.subheader("AI-Generated Structural Analysis")
