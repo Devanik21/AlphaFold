@@ -851,7 +851,56 @@ if st.session_state.current_prediction:
                 st.info("Placeholder for identifying specific points in the sequence where confidence significantly drops or increases.")
             with st.expander("🔄 Confidence Stability Over Time (Simulated)"):
                 st.info("Placeholder for simulating how confidence in certain regions might change if dynamics were considered (conceptual).")
-            # Removed 25 generic placeholder tools
+            with st.expander("⚖️ Confidence vs. Experimental B-factors"):
+                st.info("Placeholder for comparing predicted confidence with experimental B-factors if available for a homologous structure.")
+            with st.expander("🗺️ Confidence Landscape Visualization"):
+                st.info("Placeholder for a 2D or 3D landscape plot representing confidence variations.")
+            with st.expander("🔔 Confidence-based Alert for Model Updates"):
+                st.info("Placeholder for suggesting if a newer model version might improve low-confidence regions.")
+            with st.expander("📉 Confidence Entropy Analysis"):
+                st.info("Placeholder for calculating the entropy of confidence scores as a measure of prediction uncertainty.")
+            with st.expander("🔬 Confidence in Post-Translational Modification Sites"):
+                st.info("Placeholder for analyzing confidence specifically at predicted PTM sites.")
+            with st.expander("🧩 Confidence of Structural Motifs"):
+                st.info("Placeholder for assessing average confidence within identified structural motifs.")
+            with st.expander("🧬 Confidence Correlation with Codon Adaptation Index"):
+                st.info("Placeholder for exploring potential (though often weak) correlations between confidence and codon usage.")
+            with st.expander("🌍 Global vs. Local Confidence Metrics"):
+                st.info("Placeholder for distinguishing and reporting both global average confidence and local confidence hotspots/coldspots.")
+            with st.expander("⚖️ Confidence Score Normalization"):
+                st.info("Placeholder for tools to normalize confidence scores against a reference dataset if applicable.")
+            with st.expander("⚙️ Confidence-Driven Resampling (Conceptual)"):
+                st.info("Placeholder for discussing how low-confidence regions might guide further sequence sampling or MSA generation.")
+            with st.expander("📈 Confidence Trend Across Homologs"):
+                st.info("Placeholder for analyzing if confidence patterns are conserved across homologous protein predictions.")
+            with st.expander("🎯 Confidence of Ligand-Interacting Residues"):
+                st.info("Placeholder for focusing on confidence scores of residues predicted to interact with ligands.")
+            with st.expander("🌐 Confidence in Protein-Protein Interaction Interfaces"):
+                st.info("Placeholder for analyzing confidence scores at predicted PPI sites.")
+            with st.expander("↔️ Confidence Anisotropy"):
+                st.info("Placeholder for checking if confidence varies directionally in 3D space (e.g., along a specific axis of a domain).")
+            with st.expander("📝 Confidence Narrative Summary"):
+                st.info("Placeholder for AI-generated textual summary highlighting key confidence observations and implications.")
+            with st.expander("📊 Confidence Score Skewness and Kurtosis"):
+                st.info("Placeholder for statistical measures of the confidence distribution's shape.")
+            with st.expander("📉 Confidence Breakpoint Analysis"):
+                st.info("Placeholder for identifying sharp transitions or 'breakpoints' in confidence along the sequence.")
+            with st.expander("🔎 Confidence in Disulfide-Bonded Cysteines"):
+                st.info("Placeholder for checking confidence of cysteine residues predicted to form disulfide bonds.")
+            with st.expander("💡 Confidence-Weighted Ensemble Generation"):
+                st.info("Placeholder for conceptualizing how confidence could weight different models in an ensemble prediction.")
+            with st.expander("🚨 Confidence-based Flagging of Unreliable Domains"):
+                st.info("Placeholder for automatically flagging entire domains if their average confidence is below a critical threshold.")
+            with st.expander("📚 Confidence Profile Database Comparison"):
+                st.info("Placeholder for comparing the pLDDT profile to a database of profiles from experimentally determined structures.")
+            with st.expander("✨ Confidence Impact on Functional Site Prediction"):
+                st.info("Placeholder for assessing how confidence levels might affect the reliability of functional site predictions.")
+            with st.expander("🗺️ 3D Visualization of Confidence Variance"):
+                st.info("Placeholder for mapping the local variance of confidence scores onto the 3D structure.")
+            with st.expander("📉 Confidence Correlation with Sequence Complexity"):
+                st.info("Placeholder for analyzing if low-complexity regions tend to have different confidence profiles.")
+            with st.expander("🔄 Confidence Dynamics during Folding (Simulated)"):
+                st.info("Placeholder for conceptual simulation of how pLDDT might change during a simulated folding process.")
     
     with tab_map["DOMAIN"]:
         st.subheader("Domain Architecture Analysis")
