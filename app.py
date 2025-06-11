@@ -34,8 +34,8 @@ st.markdown("""
         color: white;
         text-align: center;
     }
-    .metric-card {
-        background: #f8f9fa;
+    .metric-card { /* Changed background to a darker shade */
+        background: #2c3e50; /* Dark blue-gray */
         padding: 1rem;
         border-radius: 8px;
         border-left: 4px solid #2a5298;
@@ -48,9 +48,21 @@ st.markdown("""
         text-align: center;
         margin: 1rem 0;
     }
-    .status-running { background: #fff3cd; color: #856404; }
-    .status-complete { background: #d4edda; color: #155724; }
-    .status-error { background: #f8d7da; color: #721c24; }
+    .status-running { /* Darker yellow/orange */
+        background: #4A3B00; /* Dark yellow */
+        color: #FFD700; /* Brighter yellow text */
+    }
+    .status-complete { /* Darker green */
+        background: #1A3A1F; /* Dark green */
+        color: #A8D5BA; /* Lighter green text */
+    }
+    .status-error { /* Darker red */
+        background: #4C1C24; /* Dark red */
+        color: #F5C6CB; /* Lighter red text */
+    }
+    .metric-card h4, .metric-card h2 { /* Ensure text in metric cards is light */
+        color: #ecf0f1;
+    }
     .confidence-high { color: #28a745; font-weight: bold; }
     .confidence-medium { color: #ffc107; font-weight: bold; }
     .confidence-low { color: #dc3545; font-weight: bold; }
