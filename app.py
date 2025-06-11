@@ -562,6 +562,10 @@ if st.session_state.current_prediction:
         "SURF": "🌐 Surface Properties",      # Shrunk from SURFACE
         "COMP": "🔄 Structural Comparison",   # Shrunk from COMPARE
         "QUAL": "🏅 Quality Assessment",      # Shrunk from QUALITY
+        "ALLO": "🔮 Allosteric Sites",
+        "MEMB": "🧱 Membrane Topology",
+        "FOLD": "⏳ Folding Pathway",
+        "PPI": "🤝 PPI Interface",
         "DRUG": "🎯 Druggability Analysis", # Shrunk from DRUGGABLE
         "CONS": "🛡️ Conservation Score",   # Shrunk from CONSERVE
         "DATA": "📋 Detailed Data"
@@ -718,6 +722,26 @@ if st.session_state.current_prediction:
         st.subheader("Residue Conservation Scores")
         st.info("Placeholder for displaying per-residue conservation scores mapped onto the sequence or structure.")
         # Example: st.plotly_chart(conservation_score_plot)
+
+    with tab_map["ALLO"]:
+        st.subheader("Allosteric Site Prediction")
+        st.info("Placeholder for identifying potential allosteric sites and analyzing their characteristics.")
+        # Example: st.text("Predicted allosteric pocket: Residues X-Y, Z-A. Score: 0.8")
+
+    with tab_map["MEMB"]:
+        st.subheader("Membrane Protein Analysis")
+        st.info("Placeholder for predicting transmembrane helices, topology, and orientation for membrane proteins.")
+        # Example: st.image("path/to/membrane_topology_plot.png")
+
+    with tab_map["FOLD"]:
+        st.subheader("Folding Pathway Insights")
+        st.info("Placeholder for conceptual analysis of protein folding pathways, intermediates, or bottlenecks.")
+        # Example: st.text("Key folding intermediate predicted around residues P-Q.")
+
+    with tab_map["PPI"]:
+        st.subheader("Protein-Protein Interface Analysis")
+        st.info("Placeholder for predicting and characterizing protein-protein interaction interfaces.")
+        # Example: st.dataframe(mock_ppi_interface_residues)
 
 
     # This was originally tab5, now it's the last tab
