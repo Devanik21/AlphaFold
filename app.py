@@ -340,10 +340,9 @@ with st.sidebar:
     # Model selection
     st.subheader("AI Model Selection")
     AVAILABLE_MODELS = {
-        "Gemini 2.0 Flash Experimental": "gemini-2.0-flash-exp",
-        "Gemini 2.0 Flash": "gemini-2.0-flash-thinking-exp",
-        "Gemini 1.5 Pro": "gemini-1.5-pro",
-        "Gemini 1.5 Flash": "gemini-1.5-flash"
+        "Gemini 2.5 Flash Experimental": "gemini-2.5-flash",
+        "Gemini 2.0 Flash": "gemini-2.0-flash",
+        
     }
     
     selected_model = st.selectbox(
