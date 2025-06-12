@@ -280,6 +280,60 @@ def generate_mock_allosteric_sites(sequence_length, num_sites=2):
         })
     return sites
 
+def generate_mock_membrane_topology(sequence_length):
+    is_membrane_protein = random.random() < 0.3 # 30% chance of being a membrane protein
+    if not is_membrane_protein or sequence_length < 60:
+        return {"is_membrane_protein": False, "helices": [], "topology_summary": "Predicted as globular protein."}
+
+    num_helices = random.randint(1, min(7, sequence_length // 25))
+    helices = []
+    current_pos = 1
+    for i in range(num_helices):
+        if current_pos + 40 > sequence_length: break # Not enough space for more helices
+        start = random.randint(current_pos, current_pos + 15)
+        length = random.randint(18, 25)
+        end = min(start + length -1, sequence_length)
+        if end > sequence_length: break
+        helices.append({"id": f"TMH{i+1}", "start": start, "end": end, "length": end - start + 1})
+        current_pos = end + random.randint(5, 20)
+
+    if not helices:
+        return {"is_membrane_protein": False, "helices": [], "topology_summary": "Predicted as globular protein (no clear TMHs found)."}
+
+    n_term_location = random.choice(["Inside", "Outside"])
+    c_term_location = n_term_location if num_helices % 2 == 0 else ("Outside" if n_term_location == "Inside" else "Inside")
+    
+    return {
+        "is_membrane_protein": True,
+        "helices": helices,
+        "num_helices": len(helices),
+        "n_terminus_location": n_term_location,
+        "c_terminus_location": c_term_location,
+        "topology_summary": f"Predicted membrane protein with {len(helices)} TMHs. N-terminus: {n_term_location}, C-terminus: {c_term_location}."
+    }
+
+def generate_mock_folding_pathway_insights(sequence_length):
+    insights = [
+        f"An early folding nucleus is predicted around residues {random.randint(10, sequence_length//3)}-{random.randint(sequence_length//3 + 1, sequence_length//2)}.",
+        "Long-range interactions between N-terminal and C-terminal domains appear crucial for final fold acquisition.",
+        f"A potential misfolding trap involving residues in the loop region {random.randint(sequence_length//2, sequence_length - 30)}-{random.randint(sequence_length//2+10, sequence_length-10)} might slow down folding.",
+        "The formation of secondary structures (helices and sheets) is likely rapid, followed by slower tertiary packing.",
+        "Chaperone assistance might be beneficial for efficient folding of larger domains.",
+        "Overall folding is predicted to be cooperative with few stable intermediates."
+    ]
+    return random.sample(insights, k=random.randint(2,4))
+
+def generate_mock_ppi_interface_data(sequence_length, partner_protein_id="PartnerX"):
+    num_interface_residues = random.randint(5, 20)
+    interface_residues = sorted(random.sample(range(1, sequence_length + 1), num_interface_residues))
+    return {
+        "partner_protein_id": partner_protein_id,
+        "interface_residues": ", ".join(map(str, interface_residues)),
+        "buried_surface_area_A2_mock": round(random.uniform(600, 2000), 1),
+        "interface_hydrophobicity_score_mock": round(random.uniform(-1.5, 1.5), 2),
+        "predicted_binding_energy_kcal_mol_mock": round(random.uniform(-5, -15), 1)
+    }
+
 def create_structure_plot(prediction_data):
     """Create interactive structure visualization."""
     seq_len = prediction_data['length']
@@ -1292,13 +1346,79 @@ if st.session_state.current_prediction:
 
     with tab_map["DRUG"]:
         st.subheader("Druggability Analysis")
-        st.info("Placeholder for assessing potential druggable pockets and their characteristics.")
-        # Example: st.text("Druggable Score: 0.75 (High Potential)")
+        sequence_length = data.get('length', 100)
+        # We can reuse the ligand pockets generated for the LIG tab
+        if 'ligand_pockets_cache' not in st.session_state:
+            st.session_state.ligand_pockets_cache = generate_mock_ligand_pockets(sequence_length, num_pockets=random.randint(1,4))
+        
+        mock_pockets_for_drug = st.session_state.ligand_pockets_cache
+
+        if not mock_pockets_for_drug:
+            st.info("No distinct pockets identified for druggability assessment.")
+        else:
+            st.write("Druggability assessment of predicted binding pockets:")
+            total_druggable_score = 0
+            num_pockets = len(mock_pockets_for_drug)
+            
+            for pocket in mock_pockets_for_drug:
+                total_druggable_score += pocket['druggability_score']
+                with st.expander(f"{pocket['pocket_id']} - Druggability: {pocket['druggability_score']:.2f}"):
+                    st.metric(label="Druggability Score", value=f"{pocket['druggability_score']:.2f}",
+                              help="A score from 0 (undruggable) to 1 (highly druggable).")
+                    st.markdown(f"**Target Ligand Type:** {pocket['target_ligand_type']}")
+                    st.markdown(f"**Pocket Volume:** {pocket['volume_A3']:.1f} Å³")
+                    st.markdown(f"**Key Residues:** `{pocket['residues']}`")
+
+            avg_druggability = total_druggable_score / num_pockets if num_pockets > 0 else 0
+            st.markdown("---")
+            st.markdown(f"##### Overall Druggability Assessment")
+            if avg_druggability > 0.7:
+                st.success(f"High overall druggability potential (Average Score: {avg_druggability:.2f}). Several promising pockets identified.")
+            elif avg_druggability > 0.4:
+                st.warning(f"Moderate overall druggability potential (Average Score: {avg_druggability:.2f}). Some pockets may be tractable.")
+            else:
+                st.error(f"Low overall druggability potential (Average Score: {avg_druggability:.2f}). Targeting this protein may be challenging.")
+        
+        st.markdown("---")
+        st.markdown("_Note: Druggability data is based on mock pocket predictions. Real analysis uses specialized software and considers factors like pocket geometry, hydrophobicity, and known drug targets._")
 
     with tab_map["CONS"]:
         st.subheader("Residue Conservation Scores")
-        st.info("Placeholder for displaying per-residue conservation scores mapped onto the sequence or structure.")
-        # Example: st.plotly_chart(conservation_score_plot)
+        # This will be similar to EVO tab, but let's make it slightly different for variety
+        # or if user intends a different focus for "CONS" vs "EVO"
+        seq_len_cons = data.get('length', 100)
+        residue_indices_cons = np.arange(1, seq_len_cons + 1)
+
+        # Mock conservation scores (e.g., from a different algorithm or perspective)
+        # Let's use a 0-1 scale for this one, where 1 is highly conserved.
+        conservation_values = np.random.beta(a=2, b=5, size=seq_len_cons) # Skewed towards less conserved
+        # Add some conserved patches
+        num_patches = random.randint(1, max(1, seq_len_cons // 40))
+        for _ in range(num_patches):
+            patch_start = random.randint(0, seq_len_cons - 15)
+            patch_len = random.randint(8, 20)
+            conservation_values[patch_start : patch_start + patch_len] = np.random.beta(a=5, b=2, size=patch_len) # Skewed towards conserved
+        conservation_values = np.clip(conservation_values, 0, 1)
+
+        df_cons_scores = pd.DataFrame({
+            "Residue Index": residue_indices_cons,
+            "Conservation (0-1)": conservation_values
+        })
+
+        fig_cons_line = px.line(df_cons_scores, x="Residue Index", y="Conservation (0-1)",
+                                title="Residue Conservation Profile (0=Variable, 1=Conserved)",
+                                labels={"Conservation (0-1)": "Conservation Score"})
+        fig_cons_line.update_traces(line_color='darkcyan')
+        fig_cons_line.update_layout(height=350)
+        st.plotly_chart(fig_cons_line, use_container_width=True)
+
+        conserved_threshold = 0.8
+        num_highly_conserved = df_cons_scores[df_cons_scores["Conservation (0-1)"] >= conserved_threshold].shape[0]
+        st.metric(label=f"Residues with Conservation >= {conserved_threshold}", value=f"{num_highly_conserved} ({num_highly_conserved/seq_len_cons*100:.1f}%)")
+        
+        st.markdown("This plot shows the evolutionary conservation of each residue. Highly conserved residues (score near 1) are often critical for protein structure or function.")
+        st.markdown("---")
+        st.markdown("_Note: Conservation scores are mock-generated. Real analysis relies on Multiple Sequence Alignments (MSAs) and tools like ConSurf or Rate4Site._")
 
     with tab_map["ALLO"]:
         st.subheader("Allosteric Site Prediction")
@@ -1331,19 +1451,87 @@ if st.session_state.current_prediction:
 
     with tab_map["MEMB"]:
         st.subheader("Membrane Protein Analysis")
-        st.info("Placeholder for predicting transmembrane helices, topology, and orientation for membrane proteins.")
-        # Example: st.image("path/to/membrane_topology_plot.png")
+        sequence_length = data.get('length', 100)
+        membrane_data = generate_mock_membrane_topology(sequence_length)
+
+        if not membrane_data["is_membrane_protein"]:
+            st.info(membrane_data["topology_summary"])
+        else:
+            st.success(membrane_data["topology_summary"])
+            st.metric(label="Predicted Transmembrane Helices (TMHs)", value=membrane_data["num_helices"])
+
+            if membrane_data["helices"]:
+                df_tmh = pd.DataFrame(membrane_data["helices"])
+                st.markdown("##### Predicted TMH Segments:")
+                st.dataframe(df_tmh, use_container_width=True)
+
+                # Visualization of TMHs
+                fig_tmh = go.Figure()
+                for i, helix in enumerate(membrane_data["helices"]):
+                    fig_tmh.add_trace(go.Scatter(
+                        x=[helix["start"], helix["end"]],
+                        y=[i+1, i+1],
+                        mode="lines+markers",
+                        line=dict(width=10, color=px.colors.qualitative.Plotly[i % len(px.colors.qualitative.Plotly)]),
+                        name=helix["id"]
+                    ))
+                fig_tmh.update_layout(
+                    title="Transmembrane Helix Topology",
+                    xaxis_title="Residue Index",
+                    yaxis_title="TMH Number",
+                    yaxis=dict(tickvals=list(range(1, len(membrane_data["helices"]) + 1)), 
+                               ticktext=[f"TMH{j+1}" for j in range(len(membrane_data["helices"]))]),
+                    height=max(300, 50 * len(membrane_data["helices"])),
+                    showlegend=False
+                )
+                fig_tmh.update_xaxes(range=[0, sequence_length + 1])
+                st.plotly_chart(fig_tmh, use_container_width=True)
+        st.markdown("---")
+        st.markdown("_Note: Membrane topology data is mock-generated. Real predictions use algorithms like TMHMM, Phobius, or DeepTMHMM._")
 
     with tab_map["FOLD"]:
         st.subheader("Folding Pathway Insights")
-        st.info("Placeholder for conceptual analysis of protein folding pathways, intermediates, or bottlenecks.")
-        # Example: st.text("Key folding intermediate predicted around residues P-Q.")
+        sequence_length = data.get('length', 100)
+        folding_insights = generate_mock_folding_pathway_insights(sequence_length)
+
+        st.markdown("Conceptual insights into the predicted protein folding pathway:")
+        for insight in folding_insights:
+            st.markdown(f"- {insight}")
+        
+        st.markdown("##### Visual Concept: Folding Energy Landscape (Mock)")
+        # Mock data for a simple energy landscape
+        x_landscape = np.linspace(0, 10, 100)
+        y_landscape = (np.sin(x_landscape) * 5 + 
+                       np.cos(x_landscape*0.3)*3 - 
+                       x_landscape*0.8 +  # General trend towards folded state
+                       10 + np.random.normal(0,0.5,100)) 
+        y_landscape -= np.min(y_landscape) # Normalize to start near 0
+
+        fig_landscape = go.Figure(data=[go.Scatter(x=x_landscape, y=y_landscape, mode='lines', line=dict(color='purple'))])
+        fig_landscape.update_layout(title="Conceptual Folding Energy Landscape",
+                                    xaxis_title="Reaction Coordinate (Unfolded -> Folded)",
+                                    yaxis_title="Relative Free Energy (Mock Units)",
+                                    height=350)
+        st.plotly_chart(fig_landscape, use_container_width=True)
+        st.markdown("The landscape illustrates a simplified path from unfolded to folded state, possibly via intermediates (local minima).")
+        st.markdown("---")
+        st.markdown("_Note: Folding pathway insights are highly conceptual and mock-generated. Real folding studies involve complex experiments and simulations (e.g., MD, kinetic studies)._")
 
     with tab_map["PPI"]:
         st.subheader("Protein-Protein Interface Analysis")
-        st.info("Placeholder for predicting and characterizing protein-protein interaction interfaces.")
-        # Example: st.dataframe(mock_ppi_interface_residues)
-
+        sequence_length = data.get('length', 100)
+        # Assuming one primary mock interface for simplicity here
+        mock_interface = generate_mock_ppi_interface_data(sequence_length, partner_protein_id=f"PROT_{random.randint(1000,9999)}")
+        
+        st.markdown(f"##### Predicted Interface with {mock_interface['partner_protein_id']}")
+        st.metric(label="Interface Residues", value=f"{len(mock_interface['interface_residues'].split(','))} residues")
+        st.metric(label="Buried Surface Area (Mock)", value=f"{mock_interface['buried_surface_area_A2_mock']} Å²")
+        st.metric(label="Interface Hydrophobicity (Mock)", value=f"{mock_interface['interface_hydrophobicity_score_mock']:.2f}")
+        st.metric(label="Predicted Binding Energy (Mock)", value=f"{mock_interface['predicted_binding_energy_kcal_mol_mock']:.1f} kcal/mol")
+        with st.expander("View Interface Residues"):
+            st.code(mock_interface['interface_residues'], language=None)
+        st.markdown("---")
+        st.markdown("_Note: PPI interface data is mock-generated. Real analysis uses tools like PISA, InterProSurf, or docking simulations followed by interface characterization._")
 
     # This was originally tab5, now it's the last tab
     with tab_map["DATA"]:
