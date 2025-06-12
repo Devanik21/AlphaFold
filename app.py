@@ -269,14 +269,17 @@ def generate_mock_quality_assessment(sequence_length):
 
 def generate_mock_allosteric_sites(sequence_length, num_sites=2):
     sites = []
+    possible_site_types = ["Activator Binding", "Inhibitor Binding", "Modulatory Interface", "Cryptic Pocket"]
     for i in range(num_sites):
         start_res = random.randint(1, sequence_length - 15)
-        site_residues = sorted(random.sample(range(start_res, min(start_res + 25, sequence_length)), random.randint(4,10)))
+        site_residues_indices = sorted(random.sample(range(start_res, min(start_res + 25, sequence_length)), random.randint(4,10)))
         sites.append({
             "site_id": f"AlloSite_{i+1}",
-            "residues": ", ".join(map(str, site_residues)),
+            "residues": ", ".join(map(str, site_residues_indices)),
             "prediction_score": round(random.uniform(0.3, 0.9), 2), # Higher is more likely
-            "pocket_volume_A3_mock": round(random.uniform(50, 500), 1)
+            "pocket_volume_A3_mock": round(random.uniform(50, 500), 1),
+            "site_type_mock": random.choice(possible_site_types),
+            "avg_conservation_mock": round(random.uniform(0.2, 0.95), 2) # Mock conservation score for the site
         })
     return sites
 
@@ -1430,21 +1433,35 @@ if st.session_state.current_prediction:
         else:
             st.write("Predicted potential allosteric sites and their characteristics:")
             for site in mock_allo_sites:
-                with st.expander(f"{site['site_id']} (Score: {site['prediction_score']})"):
-                    col1, col2 = st.columns(2)
+                with st.expander(f"{site['site_id']} - {site['site_type_mock']} (Score: {site['prediction_score']:.2f})"):
+                    col1, col2, col3 = st.columns(3)
                     with col1:
                         st.metric(label="Prediction Score", value=f"{site['prediction_score']:.2f}")
                     with col2:
                         st.metric(label="Mock Pocket Volume (Å³)", value=f"{site['pocket_volume_A3_mock']:.1f}")
+                    with col3:
+                        st.metric(label="Avg. Conservation (Mock)", value=f"{site['avg_conservation_mock']:.2f}")
+                    
+                    st.markdown(f"**Predicted Site Type:** {site['site_type_mock']}")
                     st.markdown(f"**Key Residues:** `{site['residues']}`")
             
-            df_allo = pd.DataFrame(mock_allo_sites)
-            fig_allo_score = px.bar(df_allo, x="site_id", y="prediction_score",
-                                      title="Prediction Scores of Potential Allosteric Sites",
-                                      color="prediction_score",
-                                      color_continuous_scale=px.colors.sequential.Tealgrn,
-                                      labels={"site_id": "Site ID", "prediction_score": "Prediction Score"})
-            st.plotly_chart(fig_allo_score, use_container_width=True)
+            if mock_allo_sites: # Ensure there's data for plots
+                df_allo = pd.DataFrame(mock_allo_sites)
+
+                if len(mock_allo_sites) > 1:
+                    type_counts = df_allo['site_type_mock'].value_counts().reset_index()
+                    type_counts.columns = ['Site Type', 'Count']
+                    fig_allo_type_dist = px.pie(type_counts, values='Count', names='Site Type', 
+                                                title="Distribution of Predicted Allosteric Site Types",
+                                                color_discrete_sequence=px.colors.qualitative.Pastel)
+                    st.plotly_chart(fig_allo_type_dist, use_container_width=True)
+
+                fig_allo_score = px.bar(df_allo, x="site_id", y="prediction_score",
+                                          title="Prediction Scores of Potential Allosteric Sites",
+                                          color="prediction_score",
+                                          color_continuous_scale=px.colors.sequential.Tealgrn,
+                                          labels={"site_id": "Site ID", "prediction_score": "Prediction Score"})
+                st.plotly_chart(fig_allo_score, use_container_width=True)
         
         st.markdown("---")
         st.markdown("_Note: Allosteric site data is mock-generated. Real analysis uses tools like AlloPred, PARS, or specialized MD simulations._")
