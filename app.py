@@ -337,6 +337,46 @@ def generate_mock_ppi_interface_data(sequence_length, partner_protein_id="Partne
         "predicted_binding_energy_kcal_mol_mock": round(random.uniform(-5, -15), 1)
     }
 
+def generate_mock_ramachandran_data(sequence_length):
+    # Simulate phi and psi angles
+    # Favoring allowed regions: alpha-helix, beta-sheet
+    phi_psi_pairs = []
+    for _ in range(sequence_length):
+        region = random.choices(["alpha_L", "beta", "alpha_R", "disallowed"], weights=[0.4, 0.3, 0.1, 0.2])[0]
+        if region == "alpha_L": # Left-handed alpha helix (less common but for variety)
+            phi = random.uniform(40, 90)
+            psi = random.uniform(0, 90)
+        elif region == "beta": # Beta sheet
+            phi = random.uniform(-180, -40)
+            psi = random.uniform(90, 180) if random.random() > 0.5 else random.uniform(-180, -150)
+        elif region == "alpha_R": # Right-handed alpha helix
+            phi = random.uniform(-150, -40)
+            psi = random.uniform(-70, 0)
+        else: # Disallowed / generously allowed
+            phi = random.uniform(-180, 180)
+            psi = random.uniform(-180, 180)
+        phi_psi_pairs.append({"phi": round(phi,1), "psi": round(psi,1)})
+    return pd.DataFrame(phi_psi_pairs)
+
+def generate_mock_contact_map_data(sequence_length):
+    contacts = np.random.rand(sequence_length, sequence_length) < 0.05 # 5% chance of contact
+    # Make it symmetric and remove self-contacts
+    contacts = np.triu(contacts, k=1) 
+    contacts = contacts + contacts.T
+    # Add some local contacts (common in helices/sheets)
+    for i in range(sequence_length - 4):
+        if random.random() < 0.3: contacts[i, i+3] = contacts[i+3, i] = 1 # i, i+3
+        if random.random() < 0.2: contacts[i, i+4] = contacts[i+4, i] = 1 # i, i+4
+    return contacts
+
+def generate_mock_sasa_data(sequence_length):
+    # Simulate SASA values, often higher for loops/turns, lower for core residues
+    sasa = np.random.normal(loc=60, scale=40, size=sequence_length)
+    # Add some periodic variation (e.g. exposed every few residues in a helix)
+    sasa += 20 * np.sin(np.arange(sequence_length) * np.pi / 3.5)
+    sasa = np.clip(sasa, 5, 200) # Realistic SASA range in Å^2
+    return sasa
+
 def create_structure_plot(prediction_data):
     """Create interactive structure visualization."""
     seq_len = prediction_data['length']
@@ -769,34 +809,78 @@ if st.session_state.current_prediction:
         
         st.subheader("Advanced Structural Analysis Tools")
         with st.expander("📊 Ramachandran Plot Analysis"):
-            st.info("Placeholder for Ramachandran plot visualization and outlier analysis. This plot helps assess the conformational quality of the protein backbone.")
+            df_phi_psi = generate_mock_ramachandran_data(data['length'])
+            fig_rama = px.scatter(df_phi_psi, x="phi", y="psi", 
+                                  title="Mock Ramachandran Plot (Phi/Psi Angles)",
+                                  labels={"phi": "Phi (degrees)", "psi": "Psi (degrees)"},
+                                  marginal_x="histogram", marginal_y="histogram",
+                                  color_discrete_sequence=['#636EFA'])
+            fig_rama.update_xaxes(range=[-180, 180])
+            fig_rama.update_yaxes(range=[-180, 180])
+            fig_rama.add_shape(type="rect", x0=-180, y0=-70, x1=-40, y1=0, line=dict(color="rgba(0,255,0,0.3)"), fillcolor="rgba(0,255,0,0.1)", name="Alpha (R)") # Alpha R
+            fig_rama.add_shape(type="rect", x0=-180, y0=90, x1=-40, y1=180, line=dict(color="rgba(255,255,0,0.3)"), fillcolor="rgba(255,255,0,0.1)", name="Beta")    # Beta
+            st.plotly_chart(fig_rama, use_container_width=True)
+            st.markdown("This plot shows the distribution of backbone dihedral angles (Phi and Psi). Residues should ideally fall into allowed regions (e.g., alpha-helical, beta-sheet). Outliers may indicate strained conformations. _(Regions are illustrative)_")
 
         with st.expander("🗺️ Residue Contact Map"):
-            st.info("Placeholder for visualizing a contact map showing interacting residues within the protein structure. Useful for understanding tertiary structure and folding.")
+            contact_map_data = generate_mock_contact_map_data(data['length'])
+            fig_contact = px.imshow(contact_map_data, 
+                                    title="Mock Residue Contact Map (Proximity < 8Å)",
+                                    labels=dict(x="Residue Index", y="Residue Index", color="Contact"),
+                                    color_continuous_scale="Greys")
+            st.plotly_chart(fig_contact, use_container_width=True)
+            st.markdown("This map visualizes predicted contacts between residue pairs. Darker points indicate residues that are close in 3D space. Patterns can reveal secondary and tertiary structural elements.")
 
         with st.expander("💧 Solvent Accessible Surface Area (SASA)"):
-            st.info("Placeholder for per-residue SASA plot and total SASA calculation. Indicates which residues are exposed to solvent.")
+            sasa_data = generate_mock_sasa_data(data['length'])
+            df_sasa = pd.DataFrame({'Residue Index': range(1, data['length'] + 1), 'SASA (Å²)': sasa_data})
+            fig_sasa_plot = px.line(df_sasa, x='Residue Index', y='SASA (Å²)', 
+                                    title="Mock Per-Residue Solvent Accessible Surface Area (SASA)",
+                                    labels={'SASA (Å²)': 'SASA (Å²)'})
+            st.plotly_chart(fig_sasa_plot, use_container_width=True)
+            st.metric(label="Total SASA (Mock)", value=f"{np.sum(sasa_data):.1f} Å²")
+            st.markdown("SASA indicates the surface area of each residue exposed to solvent. Higher values mean more exposure. This is relevant for identifying surface loops, binding sites, and core residues.")
 
         with st.expander("📏 Radius of Gyration (Rg) Analysis"):
             st.info("Placeholder for calculating and plotting the Radius of Gyration. Provides a measure of the protein's compactness.")
+            # Mock Rg value
+            mock_rg = round(0.8 * (data['length']**0.38), 2) # Approximation
+            st.metric("Predicted Radius of Gyration (Mock)", f"{mock_rg} Å")
+            st.markdown("Radius of Gyration (Rg) is a measure of the protein's overall compactness. Larger Rg values suggest a more extended conformation.")
 
         with st.expander("🔗 Hydrogen Bond Network"):
             st.info("Placeholder for identifying and visualizing the hydrogen bond network within the protein structure. Critical for stability.")
+            mock_hbonds = random.randint(data['length']//2, data['length'] * 2)
+            st.metric("Predicted Hydrogen Bonds (Mock)", mock_hbonds)
+            st.markdown("Hydrogen bonds are crucial for stabilizing protein structure, particularly secondary structures like helices and sheets.")
 
         with st.expander("🌉 Salt Bridge Analysis"):
             st.info("Placeholder for detecting and listing potential salt bridges. Important for protein stability and interactions.")
+            mock_salt_bridges = random.randint(max(0,data['length']//50 -1), data['length']//20 + 1)
+            st.metric("Predicted Salt Bridges (Mock)", mock_salt_bridges)
+            st.markdown("Salt bridges are electrostatic interactions between oppositely charged residues, contributing to protein stability and specific interactions.")
 
         with st.expander("🕳️ Surface Cavity and Pocket Detection"):
             st.info("Placeholder for identifying and characterizing cavities and pockets on the protein surface. Relevant for ligand binding and enzyme active sites.")
+            num_pockets_surf = random.randint(1,5)
+            st.metric("Predicted Surface Pockets/Cavities (Mock)", num_pockets_surf)
+            st.markdown("Surface cavities and pockets are often sites for ligand binding, catalysis, or protein-protein interactions.")
 
         with st.expander("📐 Local Geometry Check (Bond Lengths/Angles)"):
             st.info("Placeholder for analyzing local structural geometry, such as bond lengths and angles, to identify strained or unusual conformations.")
+            st.markdown("Average Bond Length Deviation (Mock): " + f"`{random.uniform(0.01, 0.05):.3f} Å`")
+            st.markdown("Average Bond Angle Deviation (Mock): " + f"`{random.uniform(1.0, 3.0):.1f}°`")
+            st.markdown("These metrics assess how well the local geometry conforms to idealized values. Large deviations can indicate strained regions.")
 
         with st.expander("🔄 Torsion Angle (Phi/Psi) Distribution"):
             st.info("Placeholder for plotting the distribution of Phi and Psi backbone torsion angles. Complements the Ramachandran plot.")
+            st.markdown("This section would show histograms or density plots for Phi and Psi angles individually, complementing the 2D Ramachandran plot by showing their marginal distributions.")
 
         with st.expander("⚡ Intra-Protein Interaction Energy"):
             st.info("Placeholder for estimating non-bonded interaction energies (e.g., van der Waals, electrostatic) between different parts of the protein.")
+            mock_energy = round(random.uniform(-500, -50) * (data['length']/100), 1)
+            st.metric("Predicted Internal Energy (Mock)", f"{mock_energy} kcal/mol")
+            st.markdown("A conceptual measure of the overall stability from internal non-bonded interactions. More negative values suggest greater stability.")
 
         with st.expander("🌡️ Protein B-Factor Analysis"):
             st.info("Placeholder for visualizing and analyzing B-factors (temperature factors) to assess atomic displacement and flexibility.")
@@ -958,106 +1042,91 @@ if st.session_state.current_prediction:
                 st.warning(f"Low confidence regions: {len(low_conf_regions)} residues")
 
             st.subheader("Advanced Confidence Analysis Tools")
-            with st.expander("📊 Per-Residue Confidence Plot"):
-                st.info("Placeholder for detailed per-residue confidence visualization. This plot helps identify specific regions of varying prediction reliability.")
+            with st.expander("📊 Per-Residue Confidence Plot (pLDDT)"):
+                # This is already shown in the main structure plot, but can be reiterated or styled differently
+                fig_plddt_conf = go.Figure(data=[go.Scatter(x=list(range(1, data['length'] + 1)), y=data['plddt'], mode='lines+markers',
+                                                          marker=dict(size=4), line=dict(color='teal'))])
+                fig_plddt_conf.update_layout(title="Per-Residue pLDDT Score", xaxis_title="Residue Index", yaxis_title="pLDDT", height=300)
+                fig_plddt_conf.add_hline(y=90, line_dash="dot", line_color="green", annotation_text="Very High")
+                fig_plddt_conf.add_hline(y=70, line_dash="dot", line_color="orange", annotation_text="Confident")
+                fig_plddt_conf.add_hline(y=50, line_dash="dot", line_color="red", annotation_text="Low")
+                st.plotly_chart(fig_plddt_conf, use_container_width=True)
+                st.markdown("This plot shows the pLDDT score for each residue, indicating local model confidence.")
+
             with st.expander("🗺️ Confidence Heatmap"):
-                st.info("Placeholder for visualizing confidence scores as a heatmap across the sequence. Useful for spotting patterns in confidence levels.")
+                # For a 1D sequence, a heatmap isn't standard unless comparing to something else.
+                # We can show a "heatmap-like" bar chart where color intensity represents confidence.
+                df_plddt_bar = pd.DataFrame({'Residue Index': list(range(1, data['length'] + 1)), 'pLDDT': data['plddt']})
+                fig_conf_heatmap_bar = px.bar(df_plddt_bar, x='Residue Index', y='pLDDT', color='pLDDT',
+                                            title="Confidence Score Profile (Heatmap-style Bar)",
+                                            color_continuous_scale=px.colors.sequential.Viridis,
+                                            labels={'pLDDT': 'pLDDT Score'})
+                fig_conf_heatmap_bar.update_layout(yaxis_range=[0,100], height=300)
+                st.plotly_chart(fig_conf_heatmap_bar, use_container_width=True)
+                st.markdown("This bar chart uses color intensity to represent pLDDT scores across the sequence, offering another view of confidence distribution.")
+
             with st.expander("📉 Confidence Score Moving Average"):
-                st.info("Placeholder for plotting a moving average of confidence scores to smooth out local variations and identify broader trends.")
+                window_size = st.slider("Moving Average Window:", min_value=3, max_value=max(5, data['length']//10), value=min(5, data['length']//10), key="conf_ma_window")
+                plddt_series = pd.Series(data['plddt'])
+                moving_avg = plddt_series.rolling(window=window_size, center=True, min_periods=1).mean()
+                fig_ma = go.Figure()
+                fig_ma.add_trace(go.Scatter(x=list(range(1, data['length'] + 1)), y=data['plddt'], mode='lines', name='pLDDT', line=dict(color='lightblue', width=1)))
+                fig_ma.add_trace(go.Scatter(x=list(range(1, data['length'] + 1)), y=moving_avg, mode='lines', name=f'MA ({window_size})', line=dict(color='red', width=2)))
+                fig_ma.update_layout(title="pLDDT with Moving Average", xaxis_title="Residue Index", yaxis_title="pLDDT", height=350)
+                st.plotly_chart(fig_ma, use_container_width=True)
+                st.markdown("The moving average helps to smooth out local fluctuations in confidence scores, highlighting broader trends and regions of sustained high or low confidence.")
+
             with st.expander("🧩 Segmented Confidence Analysis"):
                 st.info("Placeholder for analyzing confidence scores within defined segments or domains of the protein.")
+                if data['domains']:
+                    st.write("Average pLDDT per predicted domain:")
+                    for domain in data['domains']:
+                        domain_plddt = data['plddt'][domain['start']-1 : domain['end']]
+                        avg_domain_plddt = np.mean(domain_plddt)
+                        st.markdown(f"- **{domain['name']} ({domain['start']}-{domain['end']})**: {avg_domain_plddt:.2f}")
+                else:
+                    st.write("No domains defined for segmented analysis.")
+
             with st.expander("🔬 Confidence Correlation with Secondary Structure"):
                 st.info("Placeholder for assessing if certain secondary structures (helices, sheets) consistently have higher or lower confidence.")
+                df_ss_conf = pd.DataFrame({'SS': data['secondary_structure'], 'pLDDT': data['plddt']})
+                avg_conf_by_ss = df_ss_conf.groupby('SS')['pLDDT'].mean().sort_values(ascending=False)
+                st.write("Average pLDDT by Secondary Structure Type:")
+                st.dataframe(avg_conf_by_ss.reset_index().rename(columns={'pLDDT': 'Average pLDDT'}), use_container_width=True)
+                fig_ss_conf_box = px.box(df_ss_conf, x='SS', y='pLDDT', color='SS', title="pLDDT Distribution by Secondary Structure")
+                st.plotly_chart(fig_ss_conf_box, use_container_width=True)
+
             with st.expander("🔗 Confidence of Inter-Domain Linkers"):
-                st.info("Placeholder for specific analysis of confidence scores in linker regions between domains, which are often more flexible.")
+                if len(data['domains']) > 1:
+                    st.write("Average pLDDT for Inter-Domain Linkers:")
+                    linkers_plddt_all = []
+                    for i in range(len(data['domains']) - 1):
+                        linker_start = data['domains'][i]['end'] # 0-indexed end
+                        linker_end = data['domains'][i+1]['start'] -1 # 0-indexed start
+                        if linker_start < linker_end:
+                            linker_plddt = data['plddt'][linker_start : linker_end]
+                            avg_linker_plddt = np.mean(linker_plddt)
+                            st.markdown(f"- Linker between **{data['domains'][i]['name']}** and **{data['domains'][i+1]['name']}** ({linker_start+1}-{linker_end}): {avg_linker_plddt:.2f}")
+                            linkers_plddt_all.extend(linker_plddt)
+                    if linkers_plddt_all:
+                        st.metric("Overall Average Linker pLDDT", f"{np.mean(linkers_plddt_all):.2f}")
+                    else:
+                        st.write("No significant linker regions found or domains are overlapping.")
+                else:
+                    st.write("Not enough domains to analyze inter-domain linkers.")
+
             with st.expander("🧬 Confidence vs. Disorder Prediction"):
                 st.info("Placeholder for correlating confidence scores with predicted disordered regions. Often, disordered regions have lower confidence.")
             with st.expander("🌍 Confidence Outlier Detection"):
                 st.info("Placeholder for identifying residues with unusually high or low confidence compared to their local environment.")
             with st.expander("⚖️ Comparative Confidence (Model Ensemble)"):
                 st.info("Placeholder for comparing confidence scores from an ensemble of models, if available, to assess prediction robustness.")
-            with st.expander("⚙️ Confidence Threshold Impact Analysis"):
-                st.info("Placeholder for showing how structural interpretations might change at different confidence thresholds.")
             with st.expander("📈 Cumulative Confidence Distribution"):
                 st.info("Placeholder for plotting the cumulative distribution function (CDF) of confidence scores.")
             with st.expander("🎯 Confidence of Active Site Residues"):
                 st.info("Placeholder for focusing on the confidence scores of residues predicted to be part of an active or binding site.")
-            with st.expander("🌐 Surface vs. Core Confidence"):
-                st.info("Placeholder for comparing confidence scores of residues on the protein surface versus those in the core.")
-            with st.expander("↔️ Confidence Score Gradient"):
-                st.info("Placeholder for analyzing the rate of change of confidence scores along the sequence.")
-            with st.expander("📝 Confidence Report Generation"):
-                st.info("Placeholder for generating a textual summary of key confidence findings.")
-            with st.expander("📊 Confidence Score Variance Analysis"):
-                st.info("Placeholder for analyzing the variance of confidence scores in different regions.")
-            with st.expander("📉 Low Confidence Region Clustering"):
-                st.info("Placeholder for identifying and clustering contiguous regions of low confidence.")
-            with st.expander("🔎 Confidence in Loop Regions"):
-                st.info("Placeholder for specific analysis of confidence scores for loop structures.")
-            with st.expander("💡 Confidence-Weighted Structural Averaging"):
-                st.info("Placeholder for conceptualizing how confidence scores might weight atoms in structural averaging (if multiple models were present).")
-            with st.expander("🚨 Confidence Alert System"):
-                st.info("Placeholder for setting up alerts if confidence drops below critical levels in predefined important regions.")
-            with st.expander("📚 Confidence Score Benchmarking"):
-                st.info("Placeholder for comparing the current prediction's confidence profile against a database of known high-quality structures.")
-            with st.expander("✨ Confidence-Guided Refinement Suggestions"):
-                st.info("Placeholder for suggesting regions that might benefit most from further experimental validation or computational refinement based on confidence.")
             with st.expander("🗺️ 3D Confidence Mapping"):
                 st.info("Placeholder for visualizing confidence scores directly on the 3D structure (e.g., coloring by pLDDT).")
-            with st.expander("📉 Confidence Drop-off Point Identification"):
-                st.info("Placeholder for identifying specific points in the sequence where confidence significantly drops or increases.")
-            with st.expander("🔄 Confidence Stability Over Time (Simulated)"):
-                st.info("Placeholder for simulating how confidence in certain regions might change if dynamics were considered (conceptual).")
-            with st.expander("⚖️ Confidence vs. Experimental B-factors"):
-                st.info("Placeholder for comparing predicted confidence with experimental B-factors if available for a homologous structure.")
-            with st.expander("🗺️ Confidence Landscape Visualization"):
-                st.info("Placeholder for a 2D or 3D landscape plot representing confidence variations.")
-            with st.expander("🔔 Confidence-based Alert for Model Updates"):
-                st.info("Placeholder for suggesting if a newer model version might improve low-confidence regions.")
-            with st.expander("📉 Confidence Entropy Analysis"):
-                st.info("Placeholder for calculating the entropy of confidence scores as a measure of prediction uncertainty.")
-            with st.expander("🔬 Confidence in Post-Translational Modification Sites"):
-                st.info("Placeholder for analyzing confidence specifically at predicted PTM sites.")
-            with st.expander("🧩 Confidence of Structural Motifs"):
-                st.info("Placeholder for assessing average confidence within identified structural motifs.")
-            with st.expander("🧬 Confidence Correlation with Codon Adaptation Index"):
-                st.info("Placeholder for exploring potential (though often weak) correlations between confidence and codon usage.")
-            with st.expander("🌍 Global vs. Local Confidence Metrics"):
-                st.info("Placeholder for distinguishing and reporting both global average confidence and local confidence hotspots/coldspots.")
-            with st.expander("⚖️ Confidence Score Normalization"):
-                st.info("Placeholder for tools to normalize confidence scores against a reference dataset if applicable.")
-            with st.expander("⚙️ Confidence-Driven Resampling (Conceptual)"):
-                st.info("Placeholder for discussing how low-confidence regions might guide further sequence sampling or MSA generation.")
-            with st.expander("📈 Confidence Trend Across Homologs"):
-                st.info("Placeholder for analyzing if confidence patterns are conserved across homologous protein predictions.")
-            with st.expander("🎯 Confidence of Ligand-Interacting Residues"):
-                st.info("Placeholder for focusing on confidence scores of residues predicted to interact with ligands.")
-            with st.expander("🌐 Confidence in Protein-Protein Interaction Interfaces"):
-                st.info("Placeholder for analyzing confidence scores at predicted PPI sites.")
-            with st.expander("↔️ Confidence Anisotropy"):
-                st.info("Placeholder for checking if confidence varies directionally in 3D space (e.g., along a specific axis of a domain).")
-            with st.expander("📝 Confidence Narrative Summary"):
-                st.info("Placeholder for AI-generated textual summary highlighting key confidence observations and implications.")
-            with st.expander("📊 Confidence Score Skewness and Kurtosis"):
-                st.info("Placeholder for statistical measures of the confidence distribution's shape.")
-            with st.expander("📉 Confidence Breakpoint Analysis"):
-                st.info("Placeholder for identifying sharp transitions or 'breakpoints' in confidence along the sequence.")
-            with st.expander("🔎 Confidence in Disulfide-Bonded Cysteines"):
-                st.info("Placeholder for checking confidence of cysteine residues predicted to form disulfide bonds.")
-            with st.expander("💡 Confidence-Weighted Ensemble Generation"):
-                st.info("Placeholder for conceptualizing how confidence could weight different models in an ensemble prediction.")
-            with st.expander("🚨 Confidence-based Flagging of Unreliable Domains"):
-                st.info("Placeholder for automatically flagging entire domains if their average confidence is below a critical threshold.")
-            with st.expander("📚 Confidence Profile Database Comparison"):
-                st.info("Placeholder for comparing the pLDDT profile to a database of profiles from experimentally determined structures.")
-            with st.expander("✨ Confidence Impact on Functional Site Prediction"):
-                st.info("Placeholder for assessing how confidence levels might affect the reliability of functional site predictions.")
-            with st.expander("🗺️ 3D Visualization of Confidence Variance"):
-                st.info("Placeholder for mapping the local variance of confidence scores onto the 3D structure.")
-            with st.expander("📉 Confidence Correlation with Sequence Complexity"):
-                st.info("Placeholder for analyzing if low-complexity regions tend to have different confidence profiles.")
-            with st.expander("🔄 Confidence Dynamics during Folding (Simulated)"):
-                st.info("Placeholder for conceptual simulation of how pLDDT might change during a simulated folding process.")
     
     with tab_map["DOMAIN"]:
         st.subheader("Domain Architecture Analysis")
