@@ -228,6 +228,58 @@ def generate_mock_ligand_pockets(sequence_length, num_pockets=3):
         })
     return pockets
 
+def generate_mock_surface_properties(sequence_length):
+    properties = []
+    for i in range(sequence_length):
+        properties.append({
+            "residue_index": i + 1,
+            "hydrophobicity_kyte_doolittle": round(random.uniform(-4.5, 4.5), 2), # Kyte-Doolittle scale
+            "electrostatic_potential_mock": round(random.uniform(-5, 5), 2), # Mock potential
+            "solvent_accessibility_mock_percent": round(random.uniform(0, 100), 1)
+        })
+    return pd.DataFrame(properties)
+
+def generate_mock_structural_comparison(num_hits=5):
+    hits = []
+    for i in range(num_hits):
+        hits.append({
+            "PDB_ID": f"{random.choice(string.digits)}{random.choice(string.ascii_uppercase)}{random.choice(string.ascii_uppercase)}{random.choice(string.ascii_uppercase)}",
+            "Chain": random.choice(["A", "B", ""]),
+            "RMSD_Angstrom": round(random.uniform(0.5, 5.0), 2),
+            "Sequence_Identity_Percent": round(random.uniform(20, 99), 1),
+            "Alignment_Score": random.randint(50, 500),
+            "Description": random.choice(["Kinase domain", "Receptor binding domain", "Hypothetical protein", "Enzyme active site"])
+        })
+    return pd.DataFrame(hits).sort_values(by="RMSD_Angstrom")
+
+def generate_mock_quality_assessment(sequence_length):
+    ramachandran_favored = round(random.uniform(85, 98), 1)
+    ramachandran_allowed = round(random.uniform(1, 15 - (ramachandran_favored-85)), 1)
+    ramachandran_outlier = round(100 - ramachandran_favored - ramachandran_allowed, 1)
+
+    return {
+        "ramachandran_favored_percent": ramachandran_favored,
+        "ramachandran_allowed_percent": ramachandran_allowed,
+        "ramachandran_outliers_percent": ramachandran_outlier,
+        "clashscore": round(random.uniform(0, 20), 2), # Lower is better
+        "avg_bond_length_deviation_percent": round(random.uniform(0.1, 2.0), 2),
+        "avg_bond_angle_deviation_degrees": round(random.uniform(0.5, 5.0), 1),
+        "overall_gdt_ts_mock": round(random.uniform(50, 95), 1) # Global Distance Test
+    }
+
+def generate_mock_allosteric_sites(sequence_length, num_sites=2):
+    sites = []
+    for i in range(num_sites):
+        start_res = random.randint(1, sequence_length - 15)
+        site_residues = sorted(random.sample(range(start_res, min(start_res + 25, sequence_length)), random.randint(4,10)))
+        sites.append({
+            "site_id": f"AlloSite_{i+1}",
+            "residues": ", ".join(map(str, site_residues)),
+            "prediction_score": round(random.uniform(0.3, 0.9), 2), # Higher is more likely
+            "pocket_volume_A3_mock": round(random.uniform(50, 500), 1)
+        })
+    return sites
+
 def create_structure_plot(prediction_data):
     """Create interactive structure visualization."""
     seq_len = prediction_data['length']
@@ -1153,25 +1205,96 @@ if st.session_state.current_prediction:
 
     with tab_map["SURF"]:
         st.subheader("Surface Properties Analysis")
-        st.info("Placeholder for visualizing electrostatic potential, hydrophobicity, and accessibility on the protein surface.")
-        # Example: st.image("path/to/surface_electrostatics.png")
+        sequence_length = data.get('length', 100)
+        df_surface = generate_mock_surface_properties(sequence_length)
+
+        st.write("Predicted per-residue surface properties:")
+        st.dataframe(df_surface.head(), use_container_width=True)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            fig_hydro = px.line(df_surface, x="residue_index", y="hydrophobicity_kyte_doolittle",
+                                title="Hydrophobicity Profile (Kyte-Doolittle)",
+                                labels={"residue_index": "Residue Index", "hydrophobicity_kyte_doolittle": "Hydrophobicity"})
+            fig_hydro.add_hline(y=0, line_dash="dash", line_color="grey")
+            st.plotly_chart(fig_hydro, use_container_width=True)
+        
+        with col2:
+            fig_sasa = px.line(df_surface, x="residue_index", y="solvent_accessibility_mock_percent",
+                               title="Solvent Accessibility Profile (Mock %)",
+                               labels={"residue_index": "Residue Index", "solvent_accessibility_mock_percent": "Accessibility (%)"},
+                               color_discrete_sequence=['coral'])
+            st.plotly_chart(fig_sasa, use_container_width=True)
+
+        st.markdown("##### Mock Electrostatic Potential")
+        st.info("Below is a conceptual representation. Real electrostatic potential requires 3D structure and specialized software (e.g., APBS, Delphi).")
+        # Simplified bar chart for "electrostatic potential"
+        fig_electro = px.bar(df_surface.iloc[::max(1, sequence_length//50)], x="residue_index", y="electrostatic_potential_mock", # Sample points for bar chart
+                             title="Mock Electrostatic Potential along Sequence",
+                             labels={"residue_index": "Residue Index", "electrostatic_potential_mock": "Mock Potential"},
+                             color="electrostatic_potential_mock",
+                             color_continuous_scale=px.colors.diverging.RdBu)
+        st.plotly_chart(fig_electro, use_container_width=True)
+        st.markdown("---")
+        st.markdown("_Note: Surface property data is mock-generated. Real analysis requires 3D structure and tools like PyMOL, VMD, APBS, NACCESS._")
 
     with tab_map["COMP"]:
         st.subheader("Structural Comparison (vs. PDB)")
-        st.info("Placeholder for comparing the predicted structure against known structures in the PDB (e.g., RMSD values, alignments).")
-        # Example: st.text("Closest PDB hit: XXXX (RMSD: Y.Y Å)")
+        df_comparison = generate_mock_structural_comparison(num_hits=random.randint(3,8))
+
+        st.write("Top structural homologs found in a mock PDB search (lower RMSD is better):")
+        st.dataframe(df_comparison, use_container_width=True,
+                     column_config={
+                         "RMSD_Angstrom": st.column_config.NumberColumn(format="%.2f Å"),
+                         "Sequence_Identity_Percent": st.column_config.NumberColumn(format="%.1f %%")
+                     })
+
+        fig_rmsd_comp = px.bar(df_comparison, x="PDB_ID", y="RMSD_Angstrom",
+                               title="RMSD to Structural Homologs",
+                               color="Sequence_Identity_Percent",
+                               labels={"PDB_ID": "Homolog PDB ID", "RMSD_Angstrom": "RMSD (Å)"},
+                               hover_data=["Description", "Sequence_Identity_Percent"])
+        st.plotly_chart(fig_rmsd_comp, use_container_width=True)
+        st.markdown("---")
+        st.markdown("_Note: Structural comparison data is mock-generated. Real analysis uses tools like DALI, TM-align, CE, or FoldSeek against the PDB database._")
 
     with tab_map["QUAL"]:
         st.subheader("Advanced Quality Assessment")
-        st.info("Placeholder for detailed model quality metrics beyond pLDDT (e.g., Ramachandran plot analysis, bond lengths/angles).")
-        # Example: 
-        # st.image("path/to/ramachandran_plot.png")
-        # st.write("Ramachandran Plot: 98% residues in favored regions.")
+        sequence_length = data.get('length', 100)
+        quality_metrics = generate_mock_quality_assessment(sequence_length)
+
+        st.markdown("##### Ramachandran Plot Analysis (Mock Summary)")
+        rama_data = {
+            "Region": ["Favored", "Allowed", "Outliers"],
+            "Percentage": [
+                quality_metrics["ramachandran_favored_percent"],
+                quality_metrics["ramachandran_allowed_percent"],
+                quality_metrics["ramachandran_outliers_percent"]
+            ]
+        }
+        df_rama = pd.DataFrame(rama_data)
+        fig_rama = px.pie(df_rama, values="Percentage", names="Region", title="Ramachandran Plot Regions",
+                          color_discrete_map={"Favored": "mediumseagreen", "Allowed": "gold", "Outliers": "orangered"})
+        st.plotly_chart(fig_rama, use_container_width=True)
+
+        st.markdown("##### Other Quality Metrics (Mock)")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Clashscore", f"{quality_metrics['clashscore']:.2f}", help="Lower is better. Measures steric clashes.")
+        with col2:
+            st.metric("Avg. Bond Length Deviation", f"{quality_metrics['avg_bond_length_deviation_percent']:.2f}%", help="Deviation from ideal bond lengths.")
+        with col3:
+            st.metric("Avg. Bond Angle Deviation", f"{quality_metrics['avg_bond_angle_deviation_degrees']:.1f}°", help="Deviation from ideal bond angles.")
+        st.metric("Overall GDT_TS (Mock)", f"{quality_metrics['overall_gdt_ts_mock']:.1f}", help="Global Distance Test Total Score. Higher is better (0-100).")
+        
+        st.markdown("---")
+        st.markdown("_Note: Quality assessment data is mock-generated. Real analysis uses tools like PROCHECK, MolProbity, QMEAN, or validation servers._")
 
     with tab_map["DRUG"]:
         st.subheader("Druggability Analysis")
         st.info("Placeholder for assessing potential druggable pockets and their characteristics.")
         # Example: st.text("Druggable Score: 0.75 (High Potential)")
+
     with tab_map["CONS"]:
         st.subheader("Residue Conservation Scores")
         st.info("Placeholder for displaying per-residue conservation scores mapped onto the sequence or structure.")
@@ -1179,8 +1302,32 @@ if st.session_state.current_prediction:
 
     with tab_map["ALLO"]:
         st.subheader("Allosteric Site Prediction")
-        st.info("Placeholder for identifying potential allosteric sites and analyzing their characteristics.")
-        # Example: st.text("Predicted allosteric pocket: Residues X-Y, Z-A. Score: 0.8")
+        sequence_length = data.get('length', 100)
+        mock_allo_sites = generate_mock_allosteric_sites(sequence_length, num_sites=random.randint(0,3))
+
+        if not mock_allo_sites:
+            st.info("No distinct allosteric sites predicted for this protein.")
+        else:
+            st.write("Predicted potential allosteric sites and their characteristics:")
+            for site in mock_allo_sites:
+                with st.expander(f"{site['site_id']} (Score: {site['prediction_score']})"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric(label="Prediction Score", value=f"{site['prediction_score']:.2f}")
+                    with col2:
+                        st.metric(label="Mock Pocket Volume (Å³)", value=f"{site['pocket_volume_A3_mock']:.1f}")
+                    st.markdown(f"**Key Residues:** `{site['residues']}`")
+            
+            df_allo = pd.DataFrame(mock_allo_sites)
+            fig_allo_score = px.bar(df_allo, x="site_id", y="prediction_score",
+                                      title="Prediction Scores of Potential Allosteric Sites",
+                                      color="prediction_score",
+                                      color_continuous_scale=px.colors.sequential.Tealgrn,
+                                      labels={"site_id": "Site ID", "prediction_score": "Prediction Score"})
+            st.plotly_chart(fig_allo_score, use_container_width=True)
+        
+        st.markdown("---")
+        st.markdown("_Note: Allosteric site data is mock-generated. Real analysis uses tools like AlloPred, PARS, or specialized MD simulations._")
 
     with tab_map["MEMB"]:
         st.subheader("Membrane Protein Analysis")
