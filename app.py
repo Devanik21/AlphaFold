@@ -926,28 +926,100 @@ if st.session_state.current_prediction:
     
     with tab_map["INT"]:
         st.subheader("Predicted Interaction Network")
-        st.info("Placeholder for protein-protein or protein-ligand interaction network visualization and analysis.")
-        # Example: st.image("path/to/interaction_network_plot.png")
+        st.markdown("""
+        This section would typically display a visualization of predicted protein-protein interactions (PPIs) 
+        or protein-ligand interactions. It might include:
+        - A network graph showing interacting partners.
+        - Confidence scores for each predicted interaction.
+        - Details of interface residues involved in the interaction.
+        - Links to relevant databases (e.g., STRING, BioGRID).
+        """)
+        st.info("Example: Visualizing interactions using data from STRING DB, BioGRID, or results from ligand docking simulations.")
+        # Mock example:
+        st.text("Predicted Interactors:")
+        st.json({
+            "Protein_XYZ": {"confidence": 0.85, "type": "PPI"},
+            "Ligand_ABC": {"confidence": 0.92, "type": "Protein-Ligand"}
+        })
+        st.image("https://string-db.org/images/string_logo_large.png", caption="Data from STRING DB can be visualized here.", width=200)
 
     with tab_map["MUT"]:
         st.subheader("In Silico Mutational Analysis")
-        st.info("Placeholder for predicting effects of mutations on structure and stability (e.g., ΔΔG predictions).")
-        # Example: st.dataframe(mock_mutation_effect_data)
+        st.markdown("""
+        This section would present the predicted effects of single or multiple amino acid mutations 
+        on the protein's structure, stability (e.g., ΔΔG), and potentially function. It could include:
+        - A table listing mutations and their predicted impact scores (e.g., change in folding free energy).
+        - Visualization of mutation locations on the 3D structure.
+        - Predictions for changes in binding affinity, enzyme activity, or other functional parameters.
+        """)
+        st.info("Example: Using tools like FoldX, Rosetta, or PROVEAN to predict stability and functional changes upon mutation.")
+        # Mock example:
+        mock_mutation_data = pd.DataFrame({
+            'Mutation': ['A50G', 'L120P', 'R200C', f"K{random.randint(10, data.get('length', 100)-1)}E"],
+            'Predicted ΔΔG (kcal/mol)': [0.5, -2.1, 1.3, random.uniform(-3, 3)],
+            'Effect': ['Slightly Destabilizing', 'Stabilizing', 'Destabilizing', random.choice(['Neutral', 'Stabilizing', 'Destabilizing'])],
+            'Tool': ['FoldX_mock', 'Rosetta_mock', 'FoldX_mock', 'Custom_mock']
+        })
+        st.dataframe(mock_mutation_data, use_container_width=True)
 
     with tab_map["DYN"]:
         st.subheader("Molecular Dynamics Simulation Insights")
-        st.info("Placeholder for displaying results from short MD simulations (e.g., RMSF, conformational changes).")
-        # Example: st.plotly_chart(md_rmsf_plot)
+        st.markdown("""
+        This section would showcase results from molecular dynamics (MD) simulations, providing insights 
+        into the protein's flexibility, conformational changes, and dynamic behavior over time. Key outputs might include:
+        - Root Mean Square Fluctuation (RMSF) plots per residue, indicating flexible regions.
+        - Root Mean Square Deviation (RMSD) plots over simulation time, showing structural stability.
+        - Visualizations of dominant motions (e.g., from Principal Component Analysis - PCA of the trajectory).
+        - Radius of Gyration plots to assess compactness over time.
+        """)
+        st.info("Example: RMSF plot showing flexible loop regions from a GROMACS, Amber, or OpenMM simulation.")
+        # Mock example:
+        positions_dyn = np.arange(1, data.get('length', 100) + 1)
+        rmsf_mock_data = np.abs(np.random.normal(loc=1.0, scale=0.5, size=len(positions_dyn))) + (np.sin(positions_dyn/10) * 0.3)
+        rmsf_mock_data = np.clip(rmsf_mock_data, 0.2, 3.0)
+        
+        fig_rmsf = go.Figure(data=[go.Scatter(x=list(positions_dyn), y=list(rmsf_mock_data), mode='lines+markers', name='RMSF (Å)')])
+        fig_rmsf.update_layout(
+            title="Mock Residue Fluctuation (RMSF) from Simulation",
+            xaxis_title="Residue Index",
+            yaxis_title="RMSF (Å)",
+            height=300
+        )
+        st.plotly_chart(fig_rmsf, use_container_width=True)
 
     with tab_map["LIG"]:
         st.subheader("Ligand Binding Site Prediction")
-        st.info("Placeholder for identifying potential ligand binding pockets and their properties.")
-        # Example: st.text("Predicted binding site residues: 10-15, 45-50")
+        st.markdown("""
+        This section focuses on identifying and characterizing potential ligand binding pockets on the protein surface. 
+        It could display:
+        - 3D visualization of predicted binding pockets, possibly with docked ligand poses.
+        - A list of residues forming each pocket and their properties (e.g., hydrophobicity, charge).
+        - Calculated properties of the pocket (e.g., volume, surface area, druggability score).
+        - Docking scores if a specific ligand or library was screened.
+        """)
+        st.info("Example: Results from tools like CASTp, fpocket, AutoDock Vina, or Schrödinger Suite.")
+        # Mock example:
+        st.text("Predicted Binding Site 1:")
+        st.markdown(f"  - **Residues:** {random.sample(range(1, data.get('length',100)), 5)}, {random.sample(range(1, data.get('length',100)), 3)}")
+        st.markdown(f"  - **Volume:** {random.randint(200, 800)} Å³")
+        st.markdown(f"  - **Druggability Score:** {random.uniform(0.5, 0.95):.2f}")
 
     with tab_map["EVO"]:
         st.subheader("Evolutionary Trace Analysis")
-        st.info("Placeholder for highlighting conserved residues based on evolutionary information.")
-        # Example: st.plotly_chart(evolutionary_trace_plot)
+        st.markdown("""
+        This section would highlight functionally important residues by mapping evolutionary conservation 
+        onto the protein sequence or structure. It might show:
+        - Per-residue conservation scores (e.g., from ConSurf, Rate4Site).
+        - Visualization of conserved patches on the 3D structure, often indicating active sites, binding interfaces, or structurally critical regions.
+        - The multiple sequence alignment (MSA) or phylogenetic tree used for the conservation analysis.
+        """)
+        st.info("Example: Using ConSurf server results or custom MSA-based conservation scoring algorithms.")
+        # Mock example:
+        positions_evo = np.arange(1, data.get('length', 100) + 1)
+        conservation_mock_data = np.random.randint(1, 10, size=len(positions_evo)) # Mock conservation scores (1-9, 9 is most conserved)
+        fig_cons = go.Figure(data=[go.Bar(x=list(positions_evo), y=list(conservation_mock_data), name='Conservation Score', marker_color='purple')])
+        fig_cons.update_layout(title="Mock Residue Conservation Scores (1=Variable, 9=Conserved)", xaxis_title="Residue Index", yaxis_title="Conservation Score", height=300)
+        st.plotly_chart(fig_cons, use_container_width=True)
 
     with tab_map["SURF"]:
         st.subheader("Surface Properties Analysis")
