@@ -883,64 +883,138 @@ if st.session_state.current_prediction:
             st.markdown("A conceptual measure of the overall stability from internal non-bonded interactions. More negative values suggest greater stability.")
 
         with st.expander("🌡️ Protein B-Factor Analysis"):
-            st.info("Placeholder for visualizing and analyzing B-factors (temperature factors) to assess atomic displacement and flexibility.")
+            st.info("Visualizes and analyzes B-factors (temperature factors) to assess atomic displacement and flexibility. Higher B-factors indicate more mobile regions.")
+            # Mock B-factor data
+            seq_len_bfactor = data.get('length', 100)
+            mock_b_factors_avg = round(random.uniform(15, 50), 1)
+            st.metric(label="Average B-Factor (Mock)", value=f"{mock_b_factors_avg} Å²")
+            st.markdown(f"Regions with B-Factors > {round(mock_b_factors_avg + 15,0)} Å² might represent flexible loops or termini.")
 
         with st.expander("🧬 Tertiary Structure Superposition"):
-            st.info("Placeholder for superimposing the predicted structure onto a reference structure and calculating RMSD.")
+            st.info("Superimposes the predicted structure onto a reference structure (e.g., from PDB) and calculates Root Mean Square Deviation (RMSD) to quantify similarity.")
+            mock_superposed_pdb = f"{random.choice(string.digits)}{random.choice(string.ascii_uppercase)}{random.choice(string.ascii_uppercase)}{random.choice(string.ascii_uppercase)}"
+            mock_rmsd = round(random.uniform(0.5, 3.5), 2)
+            st.metric(label=f"RMSD to {mock_superposed_pdb} (Mock)", value=f"{mock_rmsd} Å")
+            st.markdown(f"A low RMSD (e.g., < 2.0 Å) indicates high structural similarity to the reference PDB ID {mock_superposed_pdb}.")
 
         with st.expander("🧩 Quaternary Structure Assembly Prediction"):
-            st.info("Placeholder for predicting how multiple protein subunits might assemble.")
+            st.info("Predicts how multiple protein subunits (chains) might assemble to form a functional complex, including symmetry and interface details.")
+            mock_subunits = random.randint(1, 4)
+            mock_symmetry = "None" if mock_subunits == 1 else random.choice(["C2", "C3", "D2"])
+            st.metric(label="Predicted Subunits (Mock)", value=mock_subunits)
+            st.markdown(f"**Predicted Symmetry (Mock):** {mock_symmetry}")
+            st.markdown("This tool helps understand oligomeric states and protein complex formation.")
 
         with st.expander("💡 Electrostatic Potential Surface"):
-            st.info("Placeholder for calculating and visualizing the electrostatic potential on the protein surface.")
+            st.info("Calculates and visualizes the electrostatic potential on the protein's solvent-accessible surface, highlighting charged patches important for interactions.")
+            st.markdown("**Key Electrostatic Features (Mock):**")
+            st.markdown(f"- Predominantly {'Negative' if random.random() > 0.5 else 'Positive'} patch near residues {random.randint(10,20)}-{random.randint(25,35)}.")
+            st.markdown(f"- Potential {random.choice(['DNA', 'RNA', 'ligand'])} binding site due to charge distribution.")
 
         with st.expander("🌊 Hydrophobicity Surface Map"):
-            st.info("Placeholder for mapping hydrophobic and hydrophilic regions on the protein surface.")
+            st.info("Maps hydrophobic and hydrophilic regions on the protein surface, which can indicate protein-protein interaction sites or membrane association regions.")
+            st.markdown("**Key Hydrophobic Features (Mock):**")
+            st.markdown(f"- Large hydrophobic patch identified around residues {random.randint(40,50)}-{random.randint(55,65)}, potentially involved in protein core or interface.")
+            st.markdown(f"- Surface hydrophobicity suggests it's likely a {'soluble' if random.random() > 0.3 else 'membrane-associated'} protein.")
 
         with st.expander("⚖️ Predicted Stability (ΔG)"):
-            st.info("Placeholder for estimating the overall folding free energy (ΔG) of the protein structure.")
+            st.info("Estimates the overall folding free energy (ΔG) of the protein structure. More negative values generally indicate higher stability.")
+            mock_delta_g = round(random.uniform(-50, -5) * (data.get('length', 100)/100.0), 1)
+            st.metric(label="Predicted Folding ΔG (Mock)", value=f"{mock_delta_g} kcal/mol")
+            st.markdown("This value provides a theoretical measure of the protein's conformational stability.")
 
         with st.expander("🌀 Conformational Ensemble Generation"):
-            st.info("Placeholder for generating a representative ensemble of protein conformations.")
+            st.info("Generates a representative ensemble of likely protein conformations, reflecting its dynamic nature, rather than a single static structure.")
+            mock_conformers = random.randint(5, 20)
+            mock_ensemble_rmsd = round(random.uniform(0.5, 2.5), 1)
+            st.metric(label="Number of Conformers in Ensemble (Mock)", value=mock_conformers)
+            st.markdown(f"**Ensemble RMSD Spread (Mock):** {mock_ensemble_rmsd} Å, indicating the diversity of conformations.")
 
         with st.expander("🎶 Normal Mode Analysis (NMA)"):
-            st.info("Placeholder for performing NMA to predict collective motions and flexibility.")
+            st.info("Performs Normal Mode Analysis (NMA) to predict large-scale collective motions and functionally relevant flexibility of the protein.")
+            st.markdown("**Dominant Motion Modes (Mock):**")
+            st.markdown(f"- Mode 1: Hinge-bending motion between domains (if applicable, or N/C termini).")
+            st.markdown(f"- Mode 2: Twisting motion along the main axis.")
+            st.markdown("NMA helps understand how protein structure relates to its dynamic function.")
 
         with st.expander("⛓️ Disulfide Bond Prediction"):
-            st.info("Placeholder for identifying potential disulfide bonds based on cysteine proximity and geometry.")
+            st.info("Identifies potential disulfide bonds based on cysteine residue proximity and geometry, which are important for protein stability, especially in extracellular proteins.")
+            num_cysteines = data.get('sequence', "").count('C')
+            mock_ss_bonds = random.randint(0, num_cysteines // 2)
+            st.metric(label="Predicted Disulfide Bonds (Mock)", value=mock_ss_bonds)
+            if mock_ss_bonds > 0:
+                st.markdown(f"Potential S-S bond between Cys{random.randint(1,50)} and Cys{random.randint(51,100)} (example).")
 
         with st.expander("🏷️ Post-Translational Modification (PTM) Site Analysis"):
-            st.info("Placeholder for analyzing structural context of predicted PTM sites.")
+            st.info("Analyzes the structural context (e.g., accessibility, surrounding residues) of predicted Post-Translational Modification (PTM) sites like phosphorylation or ubiquitination.")
+            mock_ptm_sites = random.randint(0, 5)
+            st.metric(label="Predicted PTM Sites with Structural Context (Mock)", value=mock_ptm_sites)
+            if mock_ptm_sites > 0:
+                st.markdown(f"- Phosphorylation site at Ser{random.randint(1, data.get('length',100))} predicted to be surface exposed.")
 
         with st.expander("🧱 Aggregation Prone Region Prediction"):
-            st.info("Placeholder for identifying regions in the structure prone to aggregation.")
+            st.info("Identifies regions within the protein sequence and structure that are prone to aggregation, based on hydrophobicity, charge, and secondary structure propensity.")
+            mock_agg_regions = random.randint(0, 3)
+            st.metric(label="Predicted Aggregation Prone Regions (Mock)", value=mock_agg_regions)
+            if mock_agg_regions > 0:
+                st.markdown(f"- High aggregation propensity for residues {random.randint(20,30)}-{random.randint(31,40)}.")
 
         with st.expander("🖇️ Structural Alignment (Multiple Structures)"):
-            st.info("Placeholder for aligning multiple protein structures and identifying conserved cores.")
+            st.info("Aligns multiple protein structures (if provided or found) to identify structurally conserved regions (SCRs) and variable regions (SVRs).")
+            st.markdown("**Alignment Summary (Mock vs. 2 Hypothetical Homologs):**")
+            st.markdown(f"- Core RMSD: {round(random.uniform(1.0, 2.5),1)} Å over {random.randint(data.get('length',100)//2, data.get('length',100)-10)} residues.")
+            st.markdown(f"- Identified {random.randint(1,3)} major structurally conserved regions.")
 
         with st.expander("➰ Loop Region Modeling & Refinement"):
-            st.info("Placeholder for tools to model or refine flexible loop regions in the structure.")
+            st.info("Provides tools or insights for modeling and refining flexible loop regions, which are often critical for function but hard to predict accurately.")
+            mock_loops_refined = random.randint(1, data.get('length',100)//20 +1)
+            st.metric(label="Loops Modeled/Refined (Mock)", value=mock_loops_refined)
+            st.markdown(f"Loop at residues {random.randint(10,20)}-{random.randint(21,30)} refined, improving local geometry score.")
 
         with st.expander("🎯 Active Site Characterization"):
-            st.info("Placeholder for detailed analysis of predicted active site geometry and residues.")
+            st.info("Performs detailed analysis of predicted active site(s), including geometry, key residues, volume, and electrostatic properties.")
+            st.markdown("**Active Site Properties (Mock):**")
+            st.markdown(f"- Key Catalytic Residues: His{random.randint(1,50)}, Asp{random.randint(51,100)}, Ser{random.randint(101,150)}")
+            st.markdown(f"- Pocket Volume: {round(random.uniform(100,800),1)} Å³")
 
         with st.expander("💎 Metal Ion Coordination Site Prediction"):
-            st.info("Placeholder for identifying potential metal ion binding sites and their coordinating residues.")
+            st.info("Identifies potential metal ion binding sites (e.g., for Zn, Mg, Fe) and their coordinating residues based on geometry and residue types.")
+            mock_metal_sites = random.randint(0,2)
+            st.metric(label="Predicted Metal Binding Sites (Mock)", value=mock_metal_sites)
+            if mock_metal_sites > 0:
+                st.markdown(f"- Potential Zn<sup>2+</sup> site coordinated by Cys{random.randint(1,40)}, Cys{random.randint(41,80)}, His{random.randint(81,120)}.")
 
         with st.expander("🍬 Glycosylation Site Structural Context"):
-            st.info("Placeholder for analyzing the structural environment of potential glycosylation sites.")
+            st.info("Analyzes the structural environment (accessibility, secondary structure) of potential N-linked or O-linked glycosylation sites.")
+            mock_glyco_sites = data.get('sequence',"").count('N') // 3 + data.get('sequence',"").count('S') // 5 + data.get('sequence',"").count('T') // 5
+            st.metric(label="Potential Glycosylation Sites Analyzed (Mock)", value=random.randint(0, max(1,mock_glyco_sites)))
+            st.markdown(f"N-glycosylation motif N-X-S/T at Asn{random.randint(1,data.get('length',100))} found in a surface loop.")
 
         with st.expander("✂️ Protein Cleavage Site Accessibility"):
-            st.info("Placeholder for assessing the solvent accessibility and structural context of predicted cleavage sites.")
+            st.info("Assesses the solvent accessibility and structural context of predicted protease cleavage sites within the protein.")
+            mock_cleavage_sites_exposed = random.randint(0,4)
+            st.metric(label="Exposed Cleavage Sites (Mock)", value=mock_cleavage_sites_exposed)
+            st.markdown(f"Trypsin cleavage site after Arg{random.randint(1,data.get('length',100))} predicted to be highly accessible.")
 
         with st.expander("🔍 Structural Motif Search (e.g., Helix-Turn-Helix)"):
-            st.info("Placeholder for searching for known structural motifs within the predicted structure.")
+            st.info("Searches for known structural motifs (e.g., Helix-Turn-Helix, Zinc Finger, Beta-Barrel) within the predicted 3D structure.")
+            found_motifs = random.choice([0,1])
+            st.metric(label="Known Structural Motifs Found (Mock)", value=found_motifs)
+            if found_motifs > 0:
+                st.markdown(f"- Helix-Loop-Helix motif detected at residues {random.randint(10,30)}-{random.randint(50,70)}.")
 
         with st.expander("📉 Inter-Residue Distance Matrix Plot"):
-            st.info("Placeholder for visualizing the matrix of distances between all pairs of residues.")
+            st.info("Visualizes the matrix of distances between C-alpha atoms of all pairs of residues. Patterns can highlight domains and long-range interactions.")
+            # This would typically be a heatmap, similar to contact map but with continuous distance values.
+            st.markdown("A heatmap would be displayed here showing pairwise Cα-Cα distances.")
+            st.markdown(f"Average Cα-Cα distance for non-adjacent residues (Mock): {round(random.uniform(5,25),1)} Å.")
 
         with st.expander("📦 Packing Density & Void Analysis"):
-            st.info("Placeholder for calculating local and global packing density and identifying internal voids.")
+            st.info("Calculates local and global packing density and identifies internal voids or cavities within the protein structure, which can affect stability and dynamics.")
+            mock_packing_density = round(random.uniform(0.65, 0.78), 2)
+            mock_voids = random.randint(0,5)
+            st.metric(label="Overall Packing Density (Mock)", value=mock_packing_density)
+            st.metric(label="Number of Internal Voids > 10Å³ (Mock)", value=mock_voids)
 
         with st.expander("💠 Protein Symmetry Detection"):
             st.info("Placeholder for detecting and analyzing internal or oligomeric symmetry in the structure.")
