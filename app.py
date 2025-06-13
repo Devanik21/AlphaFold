@@ -301,7 +301,7 @@ def generate_mock_membrane_topology(sequence_length):
         current_pos = end + random.randint(5, 20)
 
     if not helices:
-        return {"is_membrane_protein": False, "helices": [], "topology_summary": "Predicted as globular protein (no clear TMHs found)."}
+        return {"is_membrane_protein": False, "helices": [], "num_helices": 0, "n_terminus_location": "Unknown", "c_terminus_location": "Unknown", "topology_summary": "Predicted as globular protein (no clear TMHs found)."}
 
     n_term_location = random.choice(["Inside", "Outside"])
     c_term_location = n_term_location if num_helices % 2 == 0 else ("Outside" if n_term_location == "Inside" else "Inside")
@@ -376,6 +376,24 @@ def generate_mock_sasa_data(sequence_length):
     sasa += 20 * np.sin(np.arange(sequence_length) * np.pi / 3.5)
     sasa = np.clip(sasa, 5, 200) # Realistic SASA range in Å^2
     return sasa
+
+def generate_mock_b_factors_data(sequence_length):
+    # Simulate B-factors, often higher for loops/flexible regions
+    b_factors = np.abs(np.random.normal(loc=30, scale=15, size=sequence_length))
+    # Add some higher values for potential loop regions
+    for _ in range(sequence_length // 20): # Add a few flexible regions
+        start = random.randint(0, sequence_length - 5)
+        b_factors[start:start+random.randint(3,10)] *= random.uniform(1.5, 2.5)
+    return np.clip(b_factors, 5, 150)
+
+def generate_mock_aggregation_propensity_data(sequence_length):
+    # Simulate aggregation propensity (e.g., on a 0-1 scale)
+    propensity = np.random.beta(a=2, b=8, size=sequence_length) # Mostly low propensity
+    # Add a few high propensity patches
+    for _ in range(random.randint(0, sequence_length // 50)):
+        start = random.randint(0, sequence_length - 10)
+        propensity[start:start+random.randint(5,10)] = np.random.beta(a=8, b=2, size=len(propensity[start:start+random.randint(5,10)]))
+    return np.clip(propensity, 0, 1)
 
 def create_structure_plot(prediction_data):
     """Create interactive structure visualization."""
@@ -815,12 +833,12 @@ if st.session_state.current_prediction:
                                   labels={"phi": "Phi (degrees)", "psi": "Psi (degrees)"},
                                   marginal_x="histogram", marginal_y="histogram",
                                   color_discrete_sequence=['#636EFA'])
-            fig_rama.update_xaxes(range=[-180, 180])
-            fig_rama.update_yaxes(range=[-180, 180])
-            fig_rama.add_shape(type="rect", x0=-180, y0=-70, x1=-40, y1=0, line=dict(color="rgba(0,255,0,0.3)"), fillcolor="rgba(0,255,0,0.1)", name="Alpha (R)") # Alpha R
-            fig_rama.add_shape(type="rect", x0=-180, y0=90, x1=-40, y1=180, line=dict(color="rgba(255,255,0,0.3)"), fillcolor="rgba(255,255,0,0.1)", name="Beta")    # Beta
+            fig_rama.update_xaxes(range=[-180, 180], zeroline=False)
+            fig_rama.update_yaxes(range=[-180, 180], zeroline=False)
+            fig_rama.add_shape(type="rect", x0=-150, y0=-70, x1=-40, y1=0, line=dict(color="rgba(0,255,0,0.2)"), fillcolor="rgba(0,255,0,0.05)", name="Alpha (R)") # Alpha R (approx)
+            fig_rama.add_shape(type="rect", x0=-180, y0=90, x1=-40, y1=180, line=dict(color="rgba(255,255,0,0.2)"), fillcolor="rgba(255,255,0,0.05)", name="Beta (approx)")    # Beta (approx)
             st.plotly_chart(fig_rama, use_container_width=True)
-            st.markdown("This plot shows the distribution of backbone dihedral angles (Phi and Psi). Residues should ideally fall into allowed regions (e.g., alpha-helical, beta-sheet). Outliers may indicate strained conformations. _(Regions are illustrative)_")
+            st.caption("Distribution of backbone dihedral angles. Allowed regions (e.g., alpha-helical, beta-sheet) are highlighted illustratively. Outliers may indicate strained conformations.")
 
         with st.expander("🗺️ Residue Contact Map"):
             contact_map_data = generate_mock_contact_map_data(data['length'])
@@ -829,7 +847,7 @@ if st.session_state.current_prediction:
                                     labels=dict(x="Residue Index", y="Residue Index", color="Contact"),
                                     color_continuous_scale="Greys")
             st.plotly_chart(fig_contact, use_container_width=True)
-            st.markdown("This map visualizes predicted contacts between residue pairs. Darker points indicate residues that are close in 3D space. Patterns can reveal secondary and tertiary structural elements.")
+            st.caption("Predicted contacts between residue pairs (<8Å). Darker points indicate proximity. Patterns can reveal structural elements.")
 
         with st.expander("💧 Solvent Accessible Surface Area (SASA)"):
             sasa_data = generate_mock_sasa_data(data['length'])
