@@ -873,8 +873,25 @@ if st.session_state.current_prediction:
             st.markdown("These metrics assess how well the local geometry conforms to idealized values. Large deviations can indicate strained regions.")
 
         with st.expander("🔄 Torsion Angle (Phi/Psi) Distribution"):
-            st.info("Placeholder for plotting the distribution of Phi and Psi backbone torsion angles. Complements the Ramachandran plot.")
-            st.markdown("This section would show histograms or density plots for Phi and Psi angles individually, complementing the 2D Ramachandran plot by showing their marginal distributions.")
+            st.info("Plots the distribution of Phi (Φ) and Psi (Ψ) backbone torsion angles. This complements the 2D Ramachandran plot by showing the individual 1D distributions of these critical angles, which define the protein backbone conformation.")
+            df_phi_psi_dist = generate_mock_ramachandran_data(data['length']) # Re-use existing mock data generator
+
+            col_phi, col_psi = st.columns(2)
+            with col_phi:
+                fig_phi_dist = px.histogram(df_phi_psi_dist, x="phi", nbins=30,
+                                            title="Phi (Φ) Angle Distribution",
+                                            labels={"phi": "Phi Angle (degrees)"},
+                                            marginal="rug", color_discrete_sequence=['#0077b6'])
+                fig_phi_dist.update_layout(bargap=0.1)
+                st.plotly_chart(fig_phi_dist, use_container_width=True)
+            with col_psi:
+                fig_psi_dist = px.histogram(df_phi_psi_dist, x="psi", nbins=30,
+                                            title="Psi (Ψ) Angle Distribution",
+                                            labels={"psi": "Psi Angle (degrees)"},
+                                            marginal="rug", color_discrete_sequence=['#fb8500'])
+                fig_psi_dist.update_layout(bargap=0.1)
+                st.plotly_chart(fig_psi_dist, use_container_width=True)
+            st.markdown("Peaks in these distributions often correspond to common secondary structure elements (e.g., specific Phi/Psi ranges for alpha-helices or beta-sheets).")
 
         with st.expander("⚡ Intra-Protein Interaction Energy"):
             st.info("Placeholder for estimating non-bonded interaction energies (e.g., van der Waals, electrostatic) between different parts of the protein.")
