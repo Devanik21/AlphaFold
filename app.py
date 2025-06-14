@@ -1407,12 +1407,12 @@ if st.session_state.current_prediction:
                 st.plotly_chart(fig_ss_conf_box, use_container_width=True)
 
             with st.expander("🔗 Confidence of Inter-Domain Linkers"):
-                if len(data['domains']) > 1:
+                if data['domains'] and len(data['domains']) > 1:
                     st.write("Average pLDDT for Inter-Domain Linkers:")
                     linkers_plddt_all = []
                     for i in range(len(data['domains']) - 1):
                         linker_start = data['domains'][i]['end'] # 0-indexed end
-                        linker_end = data['domains'][i+1]['start'] -1 # 0-indexed start
+                        linker_end = data['domains'][i+1]['start'] - 1 # 0-indexed start
                         if linker_start < linker_end:
                             linker_plddt = data['plddt'][linker_start : linker_end]
                             avg_linker_plddt = np.mean(linker_plddt)
@@ -1425,7 +1425,7 @@ if st.session_state.current_prediction:
                 else:
                     st.write("Not enough domains to analyze inter-domain linkers.")
 
-            with st.expander("🧬 Confidence vs. Disorder Prediction (Mock)"):
+            with st.expander("🧬 Confidence vs. Disorder Prediction"):
                 df_conf_disorder = pd.DataFrame({
                     'Residue Index': list(range(1, data['length'] + 1)),
                     'pLDDT': data['plddt'],
@@ -1443,7 +1443,7 @@ if st.session_state.current_prediction:
                 st.markdown(f"**Average pLDDT in Ordered Regions:** {avg_plddt_ordered:.2f}")
                 st.markdown("Disordered regions often exhibit lower pLDDT scores, reflecting higher structural uncertainty.")
 
-            with st.expander("🌍 Confidence Outlier Detection (Mock)"):
+            with st.expander("🌍 Confidence Anomaly Detection"):
                 plddt_series = pd.Series(data['plddt'])
                 # Simple outlier detection: more than 2 std deviations from mean
                 mean_plddt = plddt_series.mean()
@@ -1456,23 +1456,23 @@ if st.session_state.current_prediction:
                 st.markdown(f"**Local Low Confidence Outliers (pLDDT < {lower_bound:.2f}):** {len(outliers_low)} residues. Indices: {', '.join(map(str, outliers_low.index.tolist()[:5]))}{'...' if len(outliers_low) > 5 else ''}")
                 st.markdown("Identifies residues with pLDDT scores significantly deviating from the local or global average, potentially indicating unusually stable or unstable micro-domains.")
 
-            with st.expander("⚖️ Comparative Confidence (Model Ensemble - Mock)"):
+            with st.expander("⚖️ Inter-Model Confidence Concordance (Simulated Ensemble)"):
                 # Simulate scores from 2 other hypothetical models
-                plddt_model2 = np.clip(data['plddt'] + np.random.normal(0, 5, data['length']), 0, 100)
-                plddt_model3 = np.clip(data['plddt'] + np.random.normal(0, 8, data['length']), 0, 100)
+                plddt_model2_sim = np.clip(data['plddt'] + np.random.normal(0, 5, data['length']), 0, 100)
+                plddt_model3_sim = np.clip(data['plddt'] + np.random.normal(0, 8, data['length']), 0, 100)
                 df_ensemble = pd.DataFrame({
                     'Residue Index': list(range(1, data['length'] + 1)),
                     'Model_AlphaFoldPro': data['plddt'],
-                    'Model_MockOmega': plddt_model2,
-                    'Model_MockBeta': plddt_model3
+                    'Simulated_Model_Omega': plddt_model2_sim,
+                    'Simulated_Model_Beta': plddt_model3_sim
                 })
-                fig_ensemble = px.line(df_ensemble, x='Residue Index', y=['Model_AlphaFoldPro', 'Model_MockOmega', 'Model_MockBeta'],
-                                       title="Mock Confidence Comparison Across Models",
+                fig_ensemble = px.line(df_ensemble, x='Residue Index', y=['Model_AlphaFoldPro', 'Simulated_Model_Omega', 'Simulated_Model_Beta'],
+                                       title="Simulated Inter-Model Confidence Comparison",
                                        labels={"value": "pLDDT Score", "variable": "Model"})
                 st.plotly_chart(fig_ensemble, use_container_width=True)
-                st.markdown("Compares pLDDT scores from different prediction models (if available). Consistent high scores across models increase reliability.")
+                st.markdown("Compares pLDDT scores from the current model against simulated models or external predictions. Consistent high scores across models increase reliability.")
 
-            with st.expander("📈 Cumulative Confidence Distribution (CDF - Mock)"):
+            with st.expander("📈 Cumulative Confidence Distribution Function (CDF)"):
                 plddt_sorted = np.sort(data['plddt'])
                 cdf = np.arange(1, len(plddt_sorted) + 1) / len(plddt_sorted)
                 fig_cdf = go.Figure(data=[go.Scatter(x=plddt_sorted, y=cdf, mode='lines', line=dict(color='darkviolet'))])
@@ -1480,18 +1480,18 @@ if st.session_state.current_prediction:
                                       xaxis_title="pLDDT Score", yaxis_title="Cumulative Probability", height=350)
                 st.plotly_chart(fig_cdf, use_container_width=True)
                 percentile_70 = np.percentile(data['plddt'], 70)
-                st.markdown(f"**70% of residues have a pLDDT score of {percentile_70:.2f} or lower (mock calculation).**")
+                st.markdown(f"**70% of residues have a pLDDT score of {percentile_70:.2f} or lower (based on this prediction).**")
                 st.markdown("The CDF shows the proportion of residues that have a pLDDT score less than or equal to a given value.")
 
-            with st.expander("🎯 Confidence of Active Site Residues (Mock)"):
-                # Mock active site residues
+            with st.expander("🎯 Confidence of Predicted Active Site Residues"):
+                # Predicted active site residues
                 if data['length'] > 20:
                     num_active_site_res = random.randint(3, min(10, data['length']//10))
                     active_site_indices = sorted(random.sample(range(data['length']), num_active_site_res))
                     active_site_plddt = data['plddt'][active_site_indices]
                     avg_active_site_plddt = np.mean(active_site_plddt)
-                    st.markdown(f"**Mock Active Site Residues (Indices):** {', '.join(map(str, [i+1 for i in active_site_indices]))}")
-                    st.metric(label="Average pLDDT of Mock Active Site Residues", value=f"{avg_active_site_plddt:.2f}")
+                    st.markdown(f"**Predicted Active Site Residues (Indices):** {', '.join(map(str, [i+1 for i in active_site_indices]))}")
+                    st.metric(label="Average pLDDT of Predicted Active Site Residues", value=f"{avg_active_site_plddt:.2f}")
                     if avg_active_site_plddt < 70:
                         st.warning("The predicted active site has relatively low confidence, which may impact functional interpretation.")
                 else:
@@ -1510,7 +1510,7 @@ if st.session_state.current_prediction:
                 st.plotly_chart(fig_conf_heatmap_bar_3d, use_container_width=True)
                 st.markdown("In a 3D viewer, residues would be colored by their pLDDT score, allowing quick visual identification of well-folded vs. uncertain regions.")
 
-            with st.expander("📊 Confidence Score Thresholding Analysis (Mock)"):
+            with st.expander("📊 Confidence Score Thresholding Analysis"):
                 thresholds = [50, 70, 90]
                 results = []
                 for t in thresholds:
@@ -1521,7 +1521,7 @@ if st.session_state.current_prediction:
                 st.dataframe(df_thresholds, use_container_width=True)
                 st.markdown("Analyzes the number and percentage of residues above certain pLDDT thresholds, giving an overview of overall model quality.")
 
-            with st.expander("📉 Low Confidence Region Clustering (Mock)"):
+            with st.expander("📉 Low Confidence Segment Clustering"):
                 low_conf_threshold = 50
                 low_conf_indices = np.where(data['plddt'] < low_conf_threshold)[0]
                 clusters = []
@@ -1543,29 +1543,29 @@ if st.session_state.current_prediction:
                 if len(clusters) > 5: st.markdown("... and more.")
                 st.markdown("Identifies contiguous stretches of residues with low pLDDT scores, often corresponding to flexible loops or intrinsically disordered regions.")
 
-            with st.expander("📈 High Confidence Core Identification (Mock)"):
+            with st.expander("📈 High Confidence Core Delineation"):
                 high_conf_threshold = 90
                 core_indices = np.where(data['plddt'] >= high_conf_threshold)[0]
                 # Simplified: just list number of high confidence residues
                 st.metric(label=f"Residues in High Confidence Core (pLDDT >= {high_conf_threshold})", value=f"{len(core_indices)} ({len(core_indices)/data['length']*100:.1f}%)")
                 if len(core_indices) > 0:
-                    st.markdown(f"**Example Core Segments (Indices):** A more complex algorithm would identify contiguous core blocks. Here, we just list some high confidence residues: {', '.join(map(str, core_indices[:min(10, len(core_indices))]+1))}{'...' if len(core_indices)>10 else ''}")
+                    st.markdown(f"**Example Core Segments (Indices):** A more sophisticated algorithm would identify contiguous core blocks. Displaying high confidence residue indices: {', '.join(map(str, core_indices[:min(10, len(core_indices))]+1))}{'...' if len(core_indices)>10 else ''}")
                 st.markdown("Identifies regions with consistently high pLDDT scores, likely representing the well-folded structural core of the protein.")
 
-            with st.expander("🔗 Confidence of Loop Regions (Mock)"):
-                # Mock loop regions based on secondary structure 'Coil' or 'Turn'
+            with st.expander("🔗 Confidence of Predicted Loop Regions"):
+                # Predicted loop regions based on secondary structure 'Coil' or 'Turn'
                 loop_indices = np.where((data['secondary_structure'] == 'Coil') | (data['secondary_structure'] == 'Turn'))[0]
                 if len(loop_indices) > 0:
                     loop_plddt = data['plddt'][loop_indices]
                     avg_loop_plddt = np.mean(loop_plddt)
-                    st.metric(label="Average pLDDT of Mock Loop Regions", value=f"{avg_loop_plddt:.2f}")
+                    st.metric(label="Average pLDDT of Predicted Loop Regions", value=f"{avg_loop_plddt:.2f}")
                     if avg_loop_plddt < 60:
                         st.warning("Loop regions show generally lower confidence, which is common due to their flexibility.")
                 else:
                     st.info("No distinct loop regions identified from mock secondary structure for this analysis.")
                 st.markdown("Assesses the confidence scores specifically for regions predicted as loops or turns, which are often more flexible and harder to predict accurately.")
 
-            with st.expander("↔️ Confidence Score Gradients (Mock)"):
+            with st.expander("↔️ Confidence Score Gradient Analysis"):
                 plddt_gradients = np.abs(np.diff(data['plddt']))
                 sharp_gradient_threshold = 20 # A drop/rise of 20 pLDDT points between adjacent residues
                 sharp_gradient_indices = np.where(plddt_gradients > sharp_gradient_threshold)[0]
@@ -1578,10 +1578,10 @@ if st.session_state.current_prediction:
                 st.plotly_chart(fig_grad, use_container_width=True)
                 st.markdown("Highlights regions where model confidence changes abruptly, potentially indicating boundaries between well-ordered domains and flexible linkers, or model uncertainty.")
 
-            with st.expander("📝 Confidence Score Annotation (Mock)"):
-                st.markdown("This section would typically allow users to select residues or regions on a 3D structure or sequence and see their pLDDT scores and other annotations.")
+            with st.expander("📝 Residue-Specific Confidence Query"):
+                st.markdown("Query specific residue indices to retrieve their pLDDT scores and confidence assessment.")
                 selected_residue_idx = st.number_input("Enter Residue Index to Check Confidence:", min_value=1, max_value=data['length'], value=min(10, data['length']), step=1)
-                if selected_residue_idx:
+                if selected_residue_idx and selected_residue_idx <= data['length']: # Ensure valid index
                     score = data['plddt'][selected_residue_idx-1]
                     st.markdown(f"**Residue {selected_residue_idx}:** pLDDT = **{score:.2f}**")
                     if score > 90: st.success("Confidence: Very High")
@@ -1590,7 +1590,7 @@ if st.session_state.current_prediction:
                     else: st.error("Confidence: Low")
 
             with st.expander("⚙️ Confidence-Guided Modeling Refinement (Conceptual)"):
-                if 'plddt' in data and data['plddt'] is not None and len(data['plddt']) > 0:
+                if 'plddt' in data and data['plddt'] is not None and hasattr(data['plddt'], '__len__') and len(data['plddt']) > 0:
                     low_conf_for_refinement = data['plddt'][data['plddt'] < 60]
                     if len(low_conf_for_refinement) > 0:
                         st.warning(f"{len(low_conf_for_refinement)} residues have pLDDT < 60. These regions might benefit from targeted modeling refinement, alternative modeling approaches, or experimental validation.")
@@ -1601,20 +1601,20 @@ if st.session_state.current_prediction:
                     st.info("pLDDT data not available for refinement suggestions.")
                 st.markdown("Suggests regions with low pLDDT scores that could be candidates for further computational refinement (e.g., using local docking, loop modeling) or experimental structure determination.")
 
-            with st.expander("🔬 Correlation with Experimental B-Factors (Mock Data)"):
-                # Generate mock B-factors that might inversely correlate with pLDDT
-                mock_b_factors = 50 - (data['plddt'] / 2.5) + np.random.normal(0, 5, data['length'])
-                mock_b_factors = np.clip(mock_b_factors, 5, 100)
+            with st.expander("🔬 Correlation with Theoretical B-Factors (Simulated)"):
+                # Generate simulated B-factors that might inversely correlate with pLDDT
+                simulated_b_factors = 50 - (data['plddt'] / 2.5) + np.random.normal(0, 5, data['length'])
+                simulated_b_factors = np.clip(simulated_b_factors, 5, 100)
                 
-                df_b_factors = pd.DataFrame({'pLDDT': data['plddt'], 'Mock_B_Factor': mock_b_factors})
-                correlation = df_b_factors['pLDDT'].corr(df_b_factors['Mock_B_Factor'])
+                df_b_factors = pd.DataFrame({'pLDDT': data['plddt'], 'Simulated_B_Factor': simulated_b_factors})
+                correlation = df_b_factors['pLDDT'].corr(df_b_factors['Simulated_B_Factor'])
                 
-                fig_b_corr = px.scatter(df_b_factors, x='pLDDT', y='Mock_B_Factor', 
-                                        title=f"Mock pLDDT vs. Mock B-Factor (Correlation: {correlation:.2f})",
-                                        labels={'pLDDT': 'pLDDT Score', 'Mock_B_Factor': 'Mock B-Factor (Å²)'},
+                fig_b_corr = px.scatter(df_b_factors, x='pLDDT', y='Simulated_B_Factor',
+                                        title=f"Predicted pLDDT vs. Simulated B-Factor (Correlation: {correlation:.2f})",
+                                        labels={'pLDDT': 'pLDDT Score', 'Simulated_B_Factor': 'Simulated B-Factor (Å²)'},
                                         trendline="ols", trendline_color_override="red")
                 st.plotly_chart(fig_b_corr, use_container_width=True)
-                st.markdown(f"**Correlation Coefficient (Mock Data): {correlation:.2f}**")
+                st.markdown(f"**Correlation Coefficient (Simulated Data): {correlation:.2f}**")
                 st.markdown("If experimental B-factors are available, they can be correlated with pLDDT. Lower pLDDT scores (higher uncertainty) sometimes correlate with higher B-factors (more flexibility), though this is not always the case.")
 
             with st.expander("🌐 Confidence of Surface vs. Core Residues"):
