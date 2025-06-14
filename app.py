@@ -3,7 +3,7 @@ import google.generativeai as genai
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go;
+import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import random
 import string
@@ -1437,6 +1437,82 @@ if st.session_state.current_prediction:
                 st.info("Placeholder for focusing on the confidence scores of residues predicted to be part of an active or binding site.")
             with st.expander("🗺️ 3D Confidence Mapping"):
                 st.info("Placeholder for visualizing confidence scores directly on the 3D structure (e.g., coloring by pLDDT).")
+            with st.expander("📊 Confidence Score Thresholding Analysis"):
+                st.info("Placeholder for analyzing structural features based on different pLDDT thresholds (e.g., >90, >70, >50).")
+            with st.expander("📉 Low Confidence Region Clustering"):
+                st.info("Placeholder for clustering contiguous regions of low pLDDT scores to identify potentially unstructured or flexible zones.")
+            with st.expander("📈 High Confidence Core Identification"):
+                st.info("Placeholder for identifying the structural core based on sustained high pLDDT scores.")
+            with st.expander("🔗 Confidence of Loop Regions"):
+                st.info("Placeholder for specifically analyzing the pLDDT scores of predicted loop regions.")
+            with st.expander("↔️ Confidence Score Gradients"):
+                st.info("Placeholder for analyzing sharp changes or gradients in pLDDT scores, which might indicate boundaries between well-folded and unstructured regions.")
+            with st.expander("📝 Confidence Score Annotation"):
+                st.info("Placeholder for annotating the 3D structure or sequence with pLDDT scores for detailed inspection.")
+            with st.expander("⚙️ Confidence-Guided Modeling Refinement"):
+                st.info("Placeholder for suggesting regions that might benefit from further modeling refinement based on pLDDT scores.")
+            with st.expander("🔬 Correlation with Experimental B-Factors (if available)"):
+                st.info("Placeholder for correlating pLDDT scores with experimental B-factors, as lower confidence can sometimes correlate with higher flexibility.")
+            with st.expander("🌐 Confidence of Surface vs. Core Residues"):
+                st.info("Placeholder for comparing average pLDDT scores of surface-exposed residues versus buried core residues.")
+            with st.expander("⚠️ Confidence-Based Warning Flags"):
+                st.info("Placeholder for generating warnings for regions with critically low pLDDT scores that might impact functional interpretation.")
+            with st.expander("🔄 Confidence Stability Across Multiple Runs (if applicable)"):
+                st.info("Placeholder for assessing the stability of pLDDT scores if multiple prediction runs were performed.")
+            with st.expander("📉 Confidence Score Entropy"):
+                st.info("Placeholder for calculating the entropy of pLDDT scores as a measure of confidence heterogeneity.")
+            with st.expander("🔎 Localized Confidence Minima/Maxima"):
+                st.info("Placeholder for identifying specific residues or short segments that are local minima or maxima in pLDDT scores.")
+            with st.expander("📚 Confidence Score Comparison to Database Averages (for similar folds)"):
+                st.info("Placeholder for comparing the pLDDT profile to average confidence profiles of proteins with similar known folds.")
+            with st.expander("🧩 Confidence of Domain Boundaries"):
+                st.info("Placeholder for analyzing pLDDT scores specifically at the predicted boundaries between structural domains.")
+            with st.expander("⚡ Confidence Correlation with Electrostatic Potential"):
+                st.info("Placeholder for exploring potential correlations between local pLDDT scores and calculated electrostatic potentials.")
+            with st.expander("💧 Confidence Correlation with Hydrophobicity"):
+                st.info("Placeholder for exploring potential correlations between local pLDDT scores and residue hydrophobicity.")
+            with st.expander("📐 Confidence Score vs. Local Geometry"):
+                st.info("Placeholder for analyzing if regions with poor local geometry (e.g., Ramachandran outliers) correlate with low pLDDT.")
+            with st.expander("🏷️ Confidence of PTM Site Residues"):
+                st.info("Placeholder for analyzing pLDDT scores of residues known or predicted to undergo Post-Translational Modifications.")
+            with st.expander("🛡️ Confidence of Epitope Regions"):
+                st.info("Placeholder for analyzing pLDDT scores within predicted antibody epitope regions.")
+            with st.expander("🌍 Confidence Score Spatial Clustering"):
+                st.info("Placeholder for identifying 3D spatial clusters of residues with similar pLDDT scores.")
+            with st.expander("📊 Confidence Score Percentiles"):
+                st.info("Placeholder for calculating and displaying percentile ranks for pLDDT scores across the protein.")
+            with st.expander("📉 Confidence Drop-off Analysis (Termini)"):
+                st.info("Placeholder for analyzing how pLDDT scores behave towards the N and C termini.")
+            with st.expander("📈 Confidence Score Plateau Analysis"):
+                st.info("Placeholder for identifying regions where pLDDT scores remain consistently high or low.")
+            with st.expander("⚙️ Confidence-Weighted Structural Alignment"):
+                st.info("Placeholder for using pLDDT scores to weight residues during structural alignment against homologs.")
+            with st.expander("🧬 Confidence of Residues in Known Motifs"):
+                st.info("Placeholder for checking pLDDT scores of residues part of known sequence or structural motifs.")
+            with st.expander("🔬 Confidence Score Variance Analysis"):
+                st.info("Placeholder for analyzing the variance of pLDDT scores in local windows.")
+            with st.expander("↔️ Confidence Score Symmetry (for symmetric proteins)"):
+                st.info("Placeholder for comparing pLDDT scores of symmetrically related subunits or domains.")
+            with st.expander("🤝 Confidence of Interface Residues (PPI)"):
+                st.info("Placeholder for analyzing pLDDT scores of residues predicted to be at protein-protein interfaces.")
+            with st.expander("💊 Confidence of Ligand-Binding Pocket Residues"):
+                st.info("Placeholder for analyzing pLDDT scores of residues forming predicted ligand-binding pockets.")
+            with st.expander("🧱 Confidence of Aggregation-Prone Regions"):
+                st.info("Placeholder for correlating pLDDT scores with predicted aggregation-prone regions.")
+            with st.expander("🌀 Confidence of Flexible Hinge Regions"):
+                st.info("Placeholder for identifying potential flexible hinge regions based on patterns in pLDDT scores.")
+            with st.expander("⚡ Confidence Score vs. Predicted ddG of Mutation"):
+                st.info("Placeholder for correlating pLDDT of wild-type residues with predicted stability changes upon mutation.")
+            with st.expander("🌡️ Confidence Score Temperature Scale Mapping"):
+                st.info("Placeholder for mapping pLDDT scores to a pseudo-temperature scale for visualization.")
+            with st.expander("🗺️ Confidence Landscape Visualization"):
+                st.info("Placeholder for more advanced 2D or 3D visualizations of the confidence 'landscape' across the protein.")
+            with st.expander("📉 Confidence Score Autocorrelation"):
+                st.info("Placeholder for analyzing the autocorrelation of pLDDT scores to understand characteristic lengths of confident/unconfident regions.")
+            with st.expander("📊 Confidence Score Distribution by Residue Type"):
+                st.info("Placeholder for analyzing if certain amino acid types tend to have higher or lower pLDDT scores in this protein.")
+            with st.expander("🔗 Confidence of Disulfide-Bonded Cysteines"):
+                st.info("Placeholder for checking pLDDT scores of cysteine residues predicted to form disulfide bonds.")
     
     with tab_map["DOMAIN"]:
         st.subheader("Domain Architecture Analysis")
