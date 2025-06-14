@@ -283,6 +283,119 @@ def generate_mock_allosteric_sites(sequence_length, num_sites=2):
         })
     return sites
 
+def generate_mock_protein_symmetry_data():
+    symmetry_type = random.choice(["None", "C2", "C3", "C4", "D2", "D3", "Icosahedral (mock)"])
+    if symmetry_type == "None":
+        return {"type": "None", "axis": "N/A", "confidence": 0.0}
+    return {
+        "type": symmetry_type,
+        "axis": random.choice(["X-axis", "Y-axis", "Z-axis", "Diagonal"]),
+        "confidence": round(random.uniform(0.6, 0.98), 2)
+    }
+
+def generate_mock_coevolution_contacts(sequence_length, num_contacts_factor=0.02):
+    num_contacts = int(sequence_length * num_contacts_factor * random.uniform(0.5, 1.5))
+    contacts = []
+    if sequence_length < 5: return pd.DataFrame()
+    for _ in range(num_contacts):
+        res1, res2 = sorted(random.sample(range(1, sequence_length + 1), 2))
+        contacts.append({
+            "Residue_1": res1,
+            "Residue_2": res2,
+            "Coevolution_Score": round(random.uniform(0.3, 0.95), 3),
+            "Distance_Prediction_Mock_Angstrom": round(random.uniform(4.0, 15.0), 1)
+        })
+    return pd.DataFrame(contacts).sort_values(by="Coevolution_Score", ascending=False)
+
+def generate_mock_structural_waters(num_waters_factor=0.1):
+    num_waters = int(random.uniform(5, 20) * num_waters_factor) # Simplified
+    waters = []
+    for i in range(num_waters):
+        waters.append({
+            "Water_ID": f"HOH_{i+1}",
+            "X_Coord_Mock": round(random.uniform(-20, 20), 2),
+            "Y_Coord_Mock": round(random.uniform(-20, 20), 2),
+            "Z_Coord_Mock": round(random.uniform(-20, 20), 2),
+            "B_Factor_Mock": round(random.uniform(10, 60), 1),
+            "Occupancy_Mock": round(random.uniform(0.8, 1.0), 2),
+            "Bridging_Residues_Mock": f"R{random.randint(1,50)}-D{random.randint(51,100)}" if random.random() > 0.5 else "None"
+        })
+    return pd.DataFrame(waters)
+
+def generate_mock_pore_profile(channel_length_residues=50):
+    # Simulate a pore along Z-axis, length in Angstroms
+    z_coords = np.linspace(0, channel_length_residues * 1.5, 50) # Approx 1.5A per residue length in helix
+    # Simulate a narrowing and widening pore
+    radius = 5 * np.sin(z_coords / (channel_length_residues*1.5/np.pi) * 2) + \
+             2 * np.cos(z_coords / (channel_length_residues*1.5/np.pi) * 5) + \
+             random.uniform(1.5, 4) # Base radius
+    radius = np.clip(radius, 0.5, 10) # Min/max radius
+    return pd.DataFrame({"Position_Angstrom": np.round(z_coords,1), "Radius_Angstrom": np.round(radius,1)})
+
+def generate_mock_surface_curvature(sequence_length):
+    # Simplified: assign curvature type per residue
+    curvature_types = ["Convex", "Concave", "Saddle", "Flat"]
+    curvatures = random.choices(curvature_types, weights=[0.4, 0.3, 0.15, 0.15], k=sequence_length)
+    return pd.DataFrame({"Residue_Index": range(1, sequence_length + 1), "Curvature_Type_Mock": curvatures})
+
+def generate_mock_packing_geometry(num_elements=5): # e.g., 5 helices/sheets
+    packing = []
+    elements = [f"{random.choice(['Helix', 'Sheet'])}_{i+1}" for i in range(num_elements)]
+    if num_elements < 2: return pd.DataFrame()
+    for i in range(num_elements):
+        for j in range(i + 1, num_elements):
+            packing.append({
+                "Element_1": elements[i],
+                "Element_2": elements[j],
+                "Packing_Angle_Degrees_Mock": round(random.uniform(-90, 90), 1),
+                "Closest_Distance_Angstrom_Mock": round(random.uniform(5, 15), 1)
+            })
+    return pd.DataFrame(packing)
+
+def generate_mock_fold_recognition(num_hits=3):
+    folds = ["Rossmann fold", "TIM barrel", "Beta-propeller", "Jelly roll", "Globin fold", "Alpha-alpha superhelix"]
+    hits = []
+    for i in range(num_hits):
+        hits.append({
+            "Fold_Database_ID_Mock": f"{random.choice(['CATH', 'SCOP'])}_{random.randint(1000,9999)}",
+            "Fold_Name": random.choice(folds),
+            "Z_Score_Mock": round(random.uniform(3.0, 15.0), 2),
+            "Sequence_Identity_to_Exemplar_Percent_Mock": round(random.uniform(10, 40),1)
+        })
+    return pd.DataFrame(hits).sort_values(by="Z_Score_Mock", ascending=False)
+
+def generate_mock_cryoem_fit():
+    return {
+        "Resolution_Angstrom_Mock": round(random.uniform(2.5, 6.0), 1),
+        "Cross_Correlation_Score_Mock": round(random.uniform(0.5, 0.85), 3),
+        "Map_Segmentation_Quality_Mock": random.choice(["Good", "Moderate", "Poor"])
+    }
+
+def generate_mock_saxs_profile():
+    q_values = np.logspace(-2, 0, 100) # q range for SAXS
+    rg_mock = random.uniform(15, 50) # Mock Radius of Gyration
+    i_q = np.exp(-(q_values**2 * rg_mock**2) / 3) * random.uniform(1e3, 1e5) + np.random.normal(0, 0.05 * 1e4, 100) # Guinier approximation + noise
+    i_q = np.maximum(i_q, 1) # Ensure positive intensity
+    return pd.DataFrame({"q_Angstrom_inv": q_values, "Intensity_I_q_arbitrary_units": i_q}), rg_mock
+
+def generate_mock_crystallization_propensity():
+    # Based on Surface Entropy Reduction concepts, etc.
+    return {
+        "Overall_Propensity_Score_Mock": round(random.uniform(0.1, 0.9), 2), # Higher is better
+        "Number_of_Low_Entropy_Patches_Mock": random.randint(0, 5),
+        "Largest_Hydrophobic_Patch_Area_A2_Mock": round(random.uniform(100, 800),1)
+    }
+
+def generate_mock_rotamer_analysis(sequence_length):
+    favored = random.uniform(0.85, 0.98)
+    allowed = random.uniform(0.01, 0.15 - (favored - 0.85))
+    outlier = 1.0 - favored - allowed
+    return {
+        "Favored_Rotamers_Percent": round(favored * 100, 1),
+        "Allowed_Rotamers_Percent": round(allowed * 100, 1),
+        "Outlier_Rotamers_Percent": round(outlier * 100, 1)
+    }
+
 def generate_mock_membrane_topology(sequence_length):
     is_membrane_protein = random.random() < 0.3 # 30% chance of being a membrane protein
     if not is_membrane_protein or sequence_length < 60:
@@ -1052,64 +1165,152 @@ if st.session_state.current_prediction:
             st.metric(label="Number of Internal Voids > 10Å³ (Mock)", value=mock_voids)
 
         with st.expander("💠 Protein Symmetry Detection"):
-            st.info("Placeholder for detecting and analyzing internal or oligomeric symmetry in the structure.")
+            symmetry_data = generate_mock_protein_symmetry_data()
+            st.metric(label="Predicted Symmetry Type (Mock)", value=symmetry_data['type'])
+            if symmetry_data['type'] != "None":
+                st.markdown(f"**Symmetry Axis (Mock):** {symmetry_data['axis']}")
+                st.markdown(f"**Confidence (Mock):** {symmetry_data['confidence']:.2f}")
+            st.markdown("Detects internal repeats or symmetry in oligomeric assemblies (if applicable).")
 
         with st.expander("💞 Co-evolutionary Contact Prediction Mapping"):
-            st.info("Placeholder for mapping predicted co-evolutionary contacts onto the 3D structure.")
+            df_coevo = generate_mock_coevolution_contacts(data.get('length', 100))
+            if not df_coevo.empty:
+                st.dataframe(df_coevo.head(), use_container_width=True)
+                st.markdown("Predicted residue pairs that co-evolve, suggesting spatial proximity or functional interaction. These can guide 3D folding or identify interaction sites.")
+            else:
+                st.info("No significant co-evolutionary contacts predicted (mock data).")
 
         with st.expander("💦 Structural Water Molecule Prediction"):
-            st.info("Placeholder for predicting the locations of structurally important water molecules.")
+            df_waters = generate_mock_structural_waters()
+            st.metric(label="Predicted Structural Waters (Mock)", value=len(df_waters))
+            if not df_waters.empty:
+                st.dataframe(df_waters.head(), use_container_width=True)
+                st.markdown("Predicts positions of water molecules that are integral to the protein's structure or function, often found in active sites or mediating interactions.")
+            else:
+                st.info("No significant structural waters predicted (mock data).")
 
         with st.expander("🚇 Ion Channel Pore Radius Profiling"):
-            st.info("Placeholder for calculating and visualizing the pore radius profile for channel-like structures.")
+            if data.get('length', 100) > 50 and random.random() < 0.2: # Simulate it being a channel protein
+                df_pore = generate_mock_pore_profile(data.get('length',100))
+                fig_pore = px.line(df_pore, x="Position_Angstrom", y="Radius_Angstrom",
+                                   title="Mock Ion Channel Pore Radius Profile",
+                                   labels={"Position_Angstrom": "Position along Pore Axis (Å)", "Radius_Angstrom": "Pore Radius (Å)"})
+                st.plotly_chart(fig_pore, use_container_width=True)
+                st.metric(label="Minimum Pore Radius (Mock)", value=f"{df_pore['Radius_Angstrom'].min():.1f} Å")
+                st.markdown("For transmembrane channel proteins, this visualizes the dimensions of the pore, identifying constrictions and selectivity filters.")
+            else:
+                st.info("Protein not predicted as a channel or insufficient data for pore profiling (mock).")
 
         with st.expander("🟠 Protein Surface Curvature Analysis"):
-            st.info("Placeholder for analyzing and visualizing the curvature of the protein surface.")
+            df_curvature = generate_mock_surface_curvature(data.get('length', 100))
+            curvature_counts = df_curvature['Curvature_Type_Mock'].value_counts().reset_index()
+            curvature_counts.columns = ['Curvature Type', 'Residue Count']
+            fig_curv_pie = px.pie(curvature_counts, values='Residue Count', names='Curvature Type',
+                                  title="Distribution of Surface Curvature Types (Mock)",
+                                  color_discrete_map={"Convex": "skyblue", "Concave": "salmon", "Saddle": "lightgreen", "Flat": "lightgrey"})
+            st.plotly_chart(fig_curv_pie, use_container_width=True)
+            st.markdown("Analyzes the shape of the protein surface. Concave regions often form binding pockets, while convex regions can be involved in interactions.")
 
         with st.expander("📚 Helix/Sheet Packing Geometry"):
-            st.info("Placeholder for analyzing the angles and distances between packed helices and sheets.")
+            num_secondary_elements = len(data.get('secondary_structure', [])) // 20 # Rough estimate
+            df_packing = generate_mock_packing_geometry(max(2, num_secondary_elements))
+            if not df_packing.empty:
+                st.dataframe(df_packing.head(), use_container_width=True)
+                st.markdown("Characterizes how alpha-helices and beta-sheets pack against each other, defining the protein's core architecture.")
+            else:
+                st.info("Not enough secondary structure elements for detailed packing analysis (mock).")
 
         with st.expander("📁 Fold Recognition & Classification"):
-            st.info("Placeholder for comparing the predicted fold against a library of known folds (e.g., CATH, SCOP).")
+            df_folds = generate_mock_fold_recognition()
+            st.dataframe(df_folds, use_container_width=True)
+            st.markdown("Compares the predicted 3D structure to databases of known protein folds (e.g., CATH, SCOP) to classify its architecture and infer potential functions.")
 
         with st.expander("🧊 Cryo-EM Map Fitting Score (Simulated)"):
-            st.info("Placeholder for simulating how well the structure might fit into a hypothetical Cryo-EM density map.")
+            cryo_fit_data = generate_mock_cryoem_fit()
+            st.metric(label="Simulated Cryo-EM Map Resolution (Mock)", value=f"{cryo_fit_data['Resolution_Angstrom_Mock']} Å")
+            st.metric(label="Cross-Correlation Score with Map (Mock)", value=f"{cryo_fit_data['Cross_Correlation_Score_Mock']:.3f}")
+            st.markdown(f"**Map Segmentation Quality (Mock):** {cryo_fit_data['Map_Segmentation_Quality_Mock']}")
+            st.markdown("Assesses how well the predicted atomic model fits into an experimental Cryo-Electron Microscopy (Cryo-EM) density map, if available.")
 
         with st.expander("📡 NMR Chemical Shift Prediction"):
-            st.info("Placeholder for predicting NMR chemical shifts based on the 3D structure.")
+            # Simplified: show average predicted shift for a few nuclei types
+            st.markdown(f"**Avg. Predicted Cα Shift (Mock):** {round(random.uniform(40, 70),1)} ppm")
+            st.markdown(f"**Avg. Predicted HN Shift (Mock):** {round(random.uniform(7, 10),1)} ppm")
+            st.markdown("Predicts Nuclear Magnetic Resonance (NMR) chemical shifts for backbone and sidechain atoms based on the 3D structure. Useful for validating structures against experimental NMR data.")
 
         with st.expander("✨ SAXS Profile Prediction"):
-            st.info("Placeholder for predicting the Small-Angle X-ray Scattering profile from the structure.")
+            df_saxs, rg_saxs_mock = generate_mock_saxs_profile()
+            fig_saxs = px.line(df_saxs, x="q_Angstrom_inv", y="Intensity_I_q_arbitrary_units", log_y=True,
+                               title="Predicted SAXS Profile (Mock)",
+                               labels={"q_Angstrom_inv": "q (Å⁻¹)", "Intensity_I_q_arbitrary_units": "Intensity (log scale)"})
+            st.plotly_chart(fig_saxs, use_container_width=True)
+            st.metric(label="Radius of Gyration (Rg) from SAXS (Mock)", value=f"{rg_saxs_mock:.1f} Å")
+            st.markdown("Predicts the Small-Angle X-ray Scattering (SAXS) profile, which provides information about the protein's overall shape and size in solution.")
 
         with st.expander("❄️ Crystallization Propensity Score"):
-            st.info("Placeholder for predicting the likelihood of the protein to crystallize based on surface features.")
+            crystallization_data = generate_mock_crystallization_propensity()
+            st.metric(label="Overall Crystallization Propensity (Mock)", value=f"{crystallization_data['Overall_Propensity_Score_Mock']:.2f}")
+            st.markdown(f"**Number of Low Surface Entropy Patches (Mock):** {crystallization_data['Number_of_Low_Entropy_Patches_Mock']}")
+            st.markdown("Estimates the likelihood of a protein to form well-ordered crystals, based on surface properties like hydrophobicity, charge, and conformational homogeneity.")
 
         with st.expander("🤝 Interface Residue Propensity (for PPI)"):
-            st.info("Placeholder for analyzing residue properties at potential protein-protein interaction interfaces.")
+            # Simplified: show average propensity for a mock interface
+            st.markdown(f"**Avg. Interface Propensity Score for Mock Interface:** {round(random.uniform(0.5,0.85),2)}")
+            st.markdown("Analyzes the physicochemical properties of residues at predicted protein-protein interaction interfaces to assess their likelihood of being involved in binding.")
 
         with st.expander("🕸️ Elastic Network Model Analysis"):
-            st.info("Placeholder for building and analyzing an elastic network model to study protein dynamics.")
+            # Similar to NMA, but can be focused on different aspects
+            st.markdown(f"**Lowest Frequency Mode (Mock):** Describes {random.choice(['hinge-bending', 'breathing', 'twisting'])} motion.")
+            st.markdown(f"**Predicted B-factors from ENM (Avg. Mock):** {round(random.uniform(20,60),1)} Å²")
+            st.markdown("Uses a simplified spring network (Elastic Network Model) to predict collective motions and flexibility, often correlating with Normal Mode Analysis.")
 
         with st.expander("💊 Fragment-Based Docking Suitability"):
-            st.info("Placeholder for assessing the suitability of pockets for fragment-based drug discovery.")
+            st.markdown(f"**Most Druggable Pocket (Mock ID {random.randint(1,3)}) Suitability for Fragments:** {random.choice(['High', 'Medium', 'Low'])}")
+            st.markdown("Evaluates identified binding pockets for their suitability for fragment-based drug discovery, considering size, shape, and chemical environment.")
 
         with st.expander("🔥 Hot Spot Residue Prediction (Interaction)"):
-            st.info("Placeholder for predicting 'hot spot' residues critical for protein interactions.")
+            num_hotspots = random.randint(1,5)
+            hotspot_residues = sorted(random.sample(range(1, data.get('length',100)+1), num_hotspots))
+            st.markdown(f"**Predicted Interaction Hot Spot Residues (Mock):** {', '.join(map(str, hotspot_residues))}")
+            st.markdown("Identifies key residues that contribute disproportionately to the binding energy of protein-protein or protein-ligand interactions.")
 
         with st.expander("🔦 Protein Tunnelling Analysis"):
-            st.info("Placeholder for identifying and characterizing tunnels and channels within the protein structure.")
+            num_tunnels = random.randint(0,3)
+            st.metric(label="Predicted Tunnels/Channels (Mock)", value=num_tunnels)
+            if num_tunnels > 0:
+                st.markdown(f"**Main Tunnel (Mock):** Length {round(random.uniform(10,30),1)} Å, Bottleneck Radius {round(random.uniform(1.0,3.0),1)} Å.")
+            st.markdown("Identifies and characterizes internal tunnels or channels that may be important for substrate access, product egress, or ion transport.")
 
         with st.expander("💨 Hydrodynamic Properties Estimation (e.g., Stokes Radius)"):
-            st.info("Placeholder for estimating hydrodynamic properties from the protein structure.")
+            stokes_radius_mock = round(0.7 * (data.get('length', 100)**0.33) * random.uniform(0.8, 1.2), 1) # Approximation
+            diffusion_coeff_mock = round( (1.38e-23 * 300) / (6 * np.pi * 8.9e-4 * (stokes_radius_mock * 1e-10)) * 1e10, 1) # Stokes-Einstein, m^2/s to um^2/s
+            st.metric(label="Estimated Stokes Radius (Mock)", value=f"{stokes_radius_mock} Å")
+            st.metric(label="Estimated Diffusion Coefficient (Mock)", value=f"{diffusion_coeff_mock} µm²/s")
+            st.markdown("Estimates properties like Stokes radius and diffusion coefficient from the 3D structure, relevant for understanding behavior in solution (e.g., in SEC, DLS).")
 
         with st.expander("🛡️ Structure-Based Antibody Epitope Prediction"):
-            st.info("Placeholder for predicting conformational B-cell epitopes on the protein surface.")
+            num_epitopes = random.randint(1,4)
+            st.metric(label="Predicted Conformational Epitopes (Mock)", value=num_epitopes)
+            if num_epitopes > 0:
+                epitope_residues = sorted(random.sample(range(1, data.get('length',100)+1), random.randint(8,15)))
+                st.markdown(f"**Example Epitope Patch (Mock):** Residues {', '.join(map(str, epitope_residues))}")
+            st.markdown("Identifies continuous or discontinuous (conformational) regions on the protein surface likely to be recognized by antibodies.")
 
         with st.expander("🧭 Protein Dipole Moment Calculation"):
-            st.info("Placeholder for calculating the overall dipole moment of the protein structure.")
+            dipole_magnitude_mock = round(random.uniform(50, 500) * (data.get('length',100)/100.0), 0)
+            st.metric(label="Calculated Dipole Moment Magnitude (Mock)", value=f"{dipole_magnitude_mock} Debye")
+            st.markdown("Calculates the overall electric dipole moment of the protein, which can influence interactions with other molecules and behavior in electric fields.")
 
         with st.expander("📖 Rotamer Library Analysis"):
-            st.info("Placeholder for analyzing side-chain conformations against known rotamer libraries.")
+            rotamer_data = generate_mock_rotamer_analysis(data.get('length',100))
+            df_rotamer = pd.DataFrame(rotamer_data.items(), columns=["Rotamer Category", "Percentage"])
+            fig_rotamer_pie = px.pie(df_rotamer, values="Percentage", names="Rotamer Category",
+                                     title="Side-Chain Rotamer Distribution (Mock)",
+                                     color_discrete_map={"Favored_Rotamers_Percent": "green", 
+                                                         "Allowed_Rotamers_Percent": "orange", 
+                                                         "Outlier_Rotamers_Percent": "red"})
+            st.plotly_chart(fig_rotamer_pie, use_container_width=True)
+            st.markdown("Assesses the conformational preferences of amino acid side chains against statistical libraries of known rotamers. High percentage of outliers might indicate strained regions.")
     
     with tab_map["AI"]:
         st.subheader("AI-Generated Structural Analysis")
