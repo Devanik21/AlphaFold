@@ -1590,12 +1590,15 @@ if st.session_state.current_prediction:
                     else: st.error("Confidence: Low")
 
             with st.expander("⚙️ Confidence-Guided Modeling Refinement (Conceptual)"):
-                low_conf_for_refinement = data['plddt'][data['plddt'] < 60]
-                if len(low_conf_for_refinement) > 0:
-                    st.warning(f"{len(low_conf_for_refinement)} residues have pLDDT < 60. These regions might benefit from targeted modeling refinement, alternative modeling approaches, or experimental validation.")
-                    st.markdown(f"**Example low confidence region for potential refinement:** Residues around index {np.argmin(data['plddt'])+1} (pLDDT: {np.min(data['pLDDT']):.2f})")
+                if 'plddt' in data and data['plddt'] is not None and len(data['plddt']) > 0:
+                    low_conf_for_refinement = data['plddt'][data['plddt'] < 60]
+                    if len(low_conf_for_refinement) > 0:
+                        st.warning(f"{len(low_conf_for_refinement)} residues have pLDDT < 60. These regions might benefit from targeted modeling refinement, alternative modeling approaches, or experimental validation.")
+                        st.markdown(f"**Example low confidence region for potential refinement:** Residues around index {np.argmin(data['plddt'])+1} (pLDDT: {np.min(data['pLDDT']):.2f})")
+                    else:
+                        st.success("The model shows generally good confidence (all residues pLDDT >= 60). Extensive refinement might not be critical based on pLDDT alone.")
                 else:
-                    st.success("The model shows generally good confidence (all residues pLDDT >= 60). Extensive refinement might not be critical based on pLDDT alone.")
+                    st.info("pLDDT data not available for refinement suggestions.")
                 st.markdown("Suggests regions with low pLDDT scores that could be candidates for further computational refinement (e.g., using local docking, loop modeling) or experimental structure determination.")
 
             with st.expander("🔬 Correlation with Experimental B-Factors (Mock Data)"):
