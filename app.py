@@ -336,7 +336,7 @@ def generate_mock_surface_curvature(sequence_length):
     # Simplified: assign curvature type per residue
     curvature_types = ["Convex", "Concave", "Saddle", "Flat"]
     curvatures = random.choices(curvature_types, weights=[0.4, 0.3, 0.15, 0.15], k=sequence_length)
-    return pd.DataFrame({"Residue_Index": range(1, sequence_length + 1), "Curvature_Type_Mock": curvatures})
+    return pd.DataFrame({"Residue_Index": range(1, sequence_length + 1), "Curvature_Type_Pred": curvatures})
 
 def generate_mock_packing_geometry(num_elements=5): # e.g., 5 helices/sheets
     packing = []
