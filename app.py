@@ -1594,7 +1594,7 @@ if st.session_state.current_prediction:
                     low_conf_for_refinement = data['plddt'][data['plddt'] < 60]
                     if len(low_conf_for_refinement) > 0:
                         st.warning(f"{len(low_conf_for_refinement)} residues have pLDDT < 60. These regions might benefit from targeted modeling refinement, alternative modeling approaches, or experimental validation.")
-                        st.markdown(f"**Example low confidence region for potential refinement:** Residues around index {np.argmin(data['plddt'])+1} (pLDDT: {np.min(data['pLDDT']):.2f})")
+                        st.markdown(f"**Example low confidence region for potential refinement:** Residues around index {np.argmin(data['plddt'])+1} (pLDDT: {np.min(data['plddt']):.2f})")
                     else:
                         st.success("The model shows generally good confidence (all residues pLDDT >= 60). Extensive refinement might not be critical based on pLDDT alone.")
                 else:
