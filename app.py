@@ -1989,15 +1989,26 @@ if st.session_state.current_prediction:
                     st.markdown(f"**Key Residues:** `{pocket['residues']}`")
 
             avg_druggability = total_druggable_score / num_pockets if num_pockets > 0 else 0
-            st.markdown("---")
-            st.markdown(f"##### Overall Druggability Assessment")
-            if avg_druggability > 0.7:
-                st.success(f"High overall druggability potential (Average Score: {avg_druggability:.2f}). Several promising pockets identified.")
-            elif avg_druggability > 0.4:
-                st.warning(f"Moderate overall druggability potential (Average Score: {avg_druggability:.2f}). Some pockets may be tractable.")
+            
+            df_pockets = pd.DataFrame(mock_pockets_for_drug)
+            if df_pockets.empty:
+                st.info("No pocket data available to plot druggability scores.")
             else:
-                st.error(f"Low overall druggability potential (Average Score: {avg_druggability:.2f}). Targeting this protein may be challenging.")
-        
+                fig_druggability = px.bar(df_pockets, x="pocket_id", y="druggability_score",
+                                          title="Druggability Scores of Predicted Pockets",
+                                          color="druggability_score",
+                                          color_continuous_scale=px.colors.sequential.Aggrnyl,
+                                          labels={"pocket_id": "Pocket ID", "druggability_score": "Druggability Score"})
+                st.plotly_chart(fig_druggability, use_container_width=True)
+                st.markdown("---") # Moved after the plot if plot is shown
+                st.markdown(f"##### Overall Druggability Assessment")
+                if avg_druggability > 0.7:
+                    st.success(f"High overall druggability potential (Average Score: {avg_druggability:.2f}). Several promising pockets identified.")
+                elif avg_druggability > 0.4:
+                    st.warning(f"Moderate overall druggability potential (Average Score: {avg_druggability:.2f}). Some pockets may be tractable.")
+                else:
+                    st.error(f"Low overall druggability potential (Average Score: {avg_druggability:.2f}). Targeting this protein may be challenging.")
+
         st.markdown("---")
         st.markdown("_Note: Druggability data is based on mock pocket predictions. Real analysis uses specialized software and considers factors like pocket geometry, hydrophobicity, and known drug targets._")
 
