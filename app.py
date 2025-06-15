@@ -1724,7 +1724,7 @@ if st.session_state.current_prediction:
                 if epitope_data_list:
                     df_epitopes = pd.DataFrame(epitope_data_list)
                     st.dataframe(df_epitopes, use_container_width=True)
-                    fig_epitope_conf = px.bar(df_epitopes, x='Epitope_ID', y='Avg_pLDDT', title="Avg. pLDDT of Mock Epitope Regions", color='Avg_pLDDT', color_continuous_scale=px.colors.diverging.Coolwarm)
+                    fig_epitope_conf = px.bar(df_epitopes, x='Epitope_ID', y='Avg_pLDDT', title="Avg. pLDDT of Mock Epitope Regions", color='Avg_pLDDT', color_continuous_scale='Temps')
                     st.plotly_chart(fig_epitope_conf, use_container_width=True)
                 else:
                     st.info("No mock epitopes generated (protein might be too short).")
