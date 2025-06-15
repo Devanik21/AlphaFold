@@ -15,6 +15,9 @@ import json
 import io
 import base64
 
+# Imports for practical CONF tab tools
+from scipy.stats import entropy
+from statsmodels.tsa.stattools import acf
 # Configure page
 st.set_page_config(
     layout="wide", 
@@ -489,6 +492,14 @@ def generate_mock_sasa_data(sequence_length):
     sasa += 20 * np.sin(np.arange(sequence_length) * np.pi / 3.5)
     sasa = np.clip(sasa, 5, 200) # Realistic SASA range in Å^2
     return sasa
+
+AA_HYDROPHOBICITY_KD = { # Kyte-Doolittle
+    'A': 1.8, 'R': -4.5, 'N': -3.5, 'D': -3.5, 'C': 2.5,
+    'Q': -3.5, 'E': -3.5, 'G': -0.4, 'H': -3.2, 'I': 4.5,
+    'L': 3.8, 'K': -3.9, 'M': 1.9, 'F': 2.8, 'P': -1.6,
+    'S': -0.8, 'T': -0.7, 'W': -0.9, 'Y': -1.3, 'V': 4.2,
+    'X': 0.0 # Placeholder for unknown/gap
+}
 
 def generate_mock_b_factors_data(sequence_length):
     # Simulate B-factors, often higher for loops/flexible regions
@@ -1386,23 +1397,33 @@ if st.session_state.current_prediction:
                 st.plotly_chart(fig_ma, use_container_width=True)
                 st.markdown("The moving average helps to smooth out local fluctuations in confidence scores, highlighting broader trends and regions of sustained high or low confidence.")
 
-            with st.expander("🧩 Segmented Confidence Analysis"):
-                st.info("Placeholder for analyzing confidence scores within defined segments or domains of the protein.")
+            with st.expander("🧩 Segmented Confidence Analysis (Domains)"):
                 if data['domains']:
                     st.write("Average pLDDT per predicted domain:")
+                    domain_plddt_data = []
                     for domain in data['domains']:
-                        domain_plddt = data['plddt'][domain['start']-1 : domain['end']]
-                        avg_domain_plddt = np.mean(domain_plddt)
-                        st.markdown(f"- **{domain['name']} ({domain['start']}-{domain['end']})**: {avg_domain_plddt:.2f}")
+                        # Ensure start and end are within bounds of plddt array
+                        start_idx = max(0, domain['start'] - 1) # 0-indexed
+                        end_idx = min(len(data['plddt']), domain['end'])
+                        if start_idx < end_idx:
+                            domain_plddt_scores = data['plddt'][start_idx:end_idx]
+                            avg_domain_plddt = np.mean(domain_plddt_scores) if len(domain_plddt_scores) > 0 else np.nan
+                            st.markdown(f"- **{domain['name']} ({domain['start']}-{domain['end']})**: {avg_domain_plddt:.2f}")
+                            domain_plddt_data.append({'Domain': domain['name'], 'Avg_pLDDT': avg_domain_plddt})
+                        else:
+                            st.markdown(f"- **{domain['name']} ({domain['start']}-{domain['end']})**: Invalid range for pLDDT.")
+                    if domain_plddt_data:
+                        df_domain_plddt = pd.DataFrame(domain_plddt_data)
+                        fig_domain_plddt = px.bar(df_domain_plddt, x='Domain', y='Avg_pLDDT', title="Average pLDDT per Domain", color='Avg_pLDDT', color_continuous_scale='Blues')
+                        st.plotly_chart(fig_domain_plddt, use_container_width=True)
                 else:
-                    st.write("No domains defined for segmented analysis.")
+                    st.info("No domains defined for segmented analysis.")
 
             with st.expander("🔬 Confidence Correlation with Secondary Structure"):
-                st.info("Placeholder for assessing if certain secondary structures (helices, sheets) consistently have higher or lower confidence.")
                 df_ss_conf = pd.DataFrame({'SS': data['secondary_structure'], 'pLDDT': data['plddt']})
-                avg_conf_by_ss = df_ss_conf.groupby('SS')['pLDDT'].mean().sort_values(ascending=False)
+                avg_conf_by_ss = df_ss_conf.groupby('SS')['pLDDT'].agg(['mean', 'median', 'count']).sort_values(by='mean', ascending=False)
                 st.write("Average pLDDT by Secondary Structure Type:")
-                st.dataframe(avg_conf_by_ss.reset_index().rename(columns={'pLDDT': 'Average pLDDT'}), use_container_width=True)
+                st.dataframe(avg_conf_by_ss.reset_index().rename(columns={'mean': 'Mean pLDDT', 'median': 'Median pLDDT', 'count': 'Residue Count'}), use_container_width=True)
                 fig_ss_conf_box = px.box(df_ss_conf, x='SS', y='pLDDT', color='SS', title="pLDDT Distribution by Secondary Structure")
                 st.plotly_chart(fig_ss_conf_box, use_container_width=True)
 
@@ -1410,28 +1431,40 @@ if st.session_state.current_prediction:
                 if data['domains'] and len(data['domains']) > 1:
                     st.write("Average pLDDT for Inter-Domain Linkers:")
                     linkers_plddt_all = []
+                    linker_info = []
                     for i in range(len(data['domains']) - 1):
-                        linker_start = data['domains'][i]['end'] # 0-indexed end
-                        linker_end = data['domains'][i+1]['start'] - 1 # 0-indexed start
-                        if linker_start < linker_end:
-                            linker_plddt = data['plddt'][linker_start : linker_end]
-                            avg_linker_plddt = np.mean(linker_plddt)
-                            st.markdown(f"- Linker between **{data['domains'][i]['name']}** and **{data['domains'][i+1]['name']}** ({linker_start+1}-{linker_end}): {avg_linker_plddt:.2f}")
-                            linkers_plddt_all.extend(linker_plddt)
+                        linker_start_res = data['domains'][i]['end'] + 1 # 1-indexed start of linker
+                        linker_end_res = data['domains'][i+1]['start'] - 1 # 1-indexed end of linker
+                        
+                        linker_start_idx = data['domains'][i]['end'] # 0-indexed end of domain i
+                        linker_end_idx = data['domains'][i+1]['start'] - 1 # 0-indexed start of domain i+1 (exclusive end for plddt slice)
+
+                        if linker_start_idx < linker_end_idx: # Ensure linker exists
+                            linker_plddt = data['plddt'][linker_start_idx : linker_end_idx]
+                            if len(linker_plddt) > 0:
+                                avg_linker_plddt = np.mean(linker_plddt)
+                                linker_name = f"Linker: {data['domains'][i]['name']} - {data['domains'][i+1]['name']} ({linker_start_res}-{linker_end_res})"
+                                st.markdown(f"- {linker_name}: {avg_linker_plddt:.2f}")
+                                linkers_plddt_all.extend(linker_plddt)
+                                linker_info.append({'Linker': linker_name, 'Avg_pLDDT': avg_linker_plddt, 'Length': len(linker_plddt)})
                     if linkers_plddt_all:
                         st.metric("Overall Average Linker pLDDT", f"{np.mean(linkers_plddt_all):.2f}")
+                        if linker_info:
+                            df_linker_info = pd.DataFrame(linker_info)
+                            fig_linker_plddt = px.bar(df_linker_info, x='Linker', y='Avg_pLDDT', title="Average pLDDT per Linker", color='Length', color_continuous_scale='Purples')
+                            st.plotly_chart(fig_linker_plddt, use_container_width=True)
                     else:
-                        st.write("No significant linker regions found or domains are overlapping.")
+                        st.info("No significant inter-domain linker regions found or domains are overlapping/adjacent.")
                 else:
-                    st.write("Not enough domains to analyze inter-domain linkers.")
+                    st.info("Not enough domains (need at least 2) to analyze inter-domain linkers.")
 
             with st.expander("🧬 Confidence vs. Disorder Prediction"):
                 df_conf_disorder = pd.DataFrame({
                     'Residue Index': list(range(1, data['length'] + 1)),
                     'pLDDT': data['plddt'],
-                    'Is_Disordered': data['disorder']
+                    'Is_Disordered': data['disorder'].astype(bool) # Ensure boolean for proper coloring
                 })
-                fig_conf_disorder = px.box(df_conf_disorder, x='Is_Disordered', y='pLDDT', 
+                fig_conf_disorder = px.box(df_conf_disorder, x='Is_Disordered', y='pLDDT',
                                            color='Is_Disordered',
                                            title="pLDDT Scores for Ordered vs. Disordered Regions",
                                            labels={"Is_Disordered": "Predicted Disorder Status", "pLDDT": "pLDDT Score"},
@@ -1443,34 +1476,22 @@ if st.session_state.current_prediction:
                 st.markdown(f"**Average pLDDT in Ordered Regions:** {avg_plddt_ordered:.2f}")
                 st.markdown("Disordered regions often exhibit lower pLDDT scores, reflecting higher structural uncertainty.")
 
-            with st.expander("🌍 Confidence Anomaly Detection"):
+            with st.expander("🌍 Confidence Anomaly Detection (IQR based)"):
                 plddt_series = pd.Series(data['plddt'])
-                # Simple outlier detection: more than 2 std deviations from mean
-                mean_plddt = plddt_series.mean()
-                std_plddt = plddt_series.std()
-                upper_bound = mean_plddt + 2 * std_plddt
-                lower_bound = mean_plddt - 2 * std_plddt
-                outliers_high = plddt_series[plddt_series > upper_bound]
-                outliers_low = plddt_series[plddt_series < lower_bound]
-                st.markdown(f"**Local High Confidence Outliers (pLDDT > {upper_bound:.2f}):** {len(outliers_high)} residues. Indices: {', '.join(map(str, outliers_high.index.tolist()[:5]))}{'...' if len(outliers_high) > 5 else ''}")
-                st.markdown(f"**Local Low Confidence Outliers (pLDDT < {lower_bound:.2f}):** {len(outliers_low)} residues. Indices: {', '.join(map(str, outliers_low.index.tolist()[:5]))}{'...' if len(outliers_low) > 5 else ''}")
-                st.markdown("Identifies residues with pLDDT scores significantly deviating from the local or global average, potentially indicating unusually stable or unstable micro-domains.")
+                Q1 = plddt_series.quantile(0.25)
+                Q3 = plddt_series.quantile(0.75)
+                IQR = Q3 - Q1
+                lower_bound_iqr = Q1 - 1.5 * IQR
+                upper_bound_iqr = Q3 + 1.5 * IQR
 
-            with st.expander("⚖️ Inter-Model Confidence Concordance (Simulated Ensemble)"):
-                # Simulate scores from 2 other hypothetical models
-                plddt_model2_sim = np.clip(data['plddt'] + np.random.normal(0, 5, data['length']), 0, 100)
-                plddt_model3_sim = np.clip(data['plddt'] + np.random.normal(0, 8, data['length']), 0, 100)
-                df_ensemble = pd.DataFrame({
-                    'Residue Index': list(range(1, data['length'] + 1)),
-                    'Model_AlphaFoldPro': data['plddt'],
-                    'Simulated_Model_Omega': plddt_model2_sim,
-                    'Simulated_Model_Beta': plddt_model3_sim
-                })
-                fig_ensemble = px.line(df_ensemble, x='Residue Index', y=['Model_AlphaFoldPro', 'Simulated_Model_Omega', 'Simulated_Model_Beta'],
-                                       title="Simulated Inter-Model Confidence Comparison",
-                                       labels={"value": "pLDDT Score", "variable": "Model"})
-                st.plotly_chart(fig_ensemble, use_container_width=True)
-                st.markdown("Compares pLDDT scores from the current model against simulated models or external predictions. Consistent high scores across models increase reliability.")
+                anomalies_low_iqr = plddt_series[plddt_series < lower_bound_iqr]
+                anomalies_high_iqr = plddt_series[plddt_series > upper_bound_iqr]
+
+                st.markdown(f"**Lower Bound (Q1 - 1.5*IQR):** {lower_bound_iqr:.2f}")
+                st.markdown(f"**Upper Bound (Q3 + 1.5*IQR):** {upper_bound_iqr:.2f}")
+                st.markdown(f"**Low Confidence Anomalies (pLDDT < {lower_bound_iqr:.2f}):** {len(anomalies_low_iqr)} residues. Indices: {', '.join(map(str, anomalies_low_iqr.index.map(lambda x: x+1).tolist()[:5]))}{'...' if len(anomalies_low_iqr) > 5 else ''}")
+                st.markdown(f"**High Confidence Anomalies (pLDDT > {upper_bound_iqr:.2f}):** {len(anomalies_high_iqr)} residues. Indices: {', '.join(map(str, anomalies_high_iqr.index.map(lambda x: x+1).tolist()[:5]))}{'...' if len(anomalies_high_iqr) > 5 else ''}")
+                st.markdown("Identifies residues with pLDDT scores falling outside 1.5 times the Interquartile Range, potentially indicating unusually stable or unstable micro-domains.")
 
             with st.expander("📈 Cumulative Confidence Distribution Function (CDF)"):
                 plddt_sorted = np.sort(data['plddt'])
@@ -1483,20 +1504,22 @@ if st.session_state.current_prediction:
                 st.markdown(f"**70% of residues have a pLDDT score of {percentile_70:.2f} or lower (based on this prediction).**")
                 st.markdown("The CDF shows the proportion of residues that have a pLDDT score less than or equal to a given value.")
 
-            with st.expander("🎯 Confidence of Predicted Active Site Residues"):
-                # Predicted active site residues
-                if data['length'] > 20:
-                    num_active_site_res = random.randint(3, min(10, data['length']//10))
-                    active_site_indices = sorted(random.sample(range(data['length']), num_active_site_res))
-                    active_site_plddt = data['plddt'][active_site_indices]
-                    avg_active_site_plddt = np.mean(active_site_plddt)
-                    st.markdown(f"**Predicted Active Site Residues (Indices):** {', '.join(map(str, [i+1 for i in active_site_indices]))}")
-                    st.metric(label="Average pLDDT of Predicted Active Site Residues", value=f"{avg_active_site_plddt:.2f}")
-                    if avg_active_site_plddt < 70:
-                        st.warning("The predicted active site has relatively low confidence, which may impact functional interpretation.")
-                else:
-                    st.info("Protein too short for mock active site analysis.")
-                st.markdown("Highlights the pLDDT scores for residues predicted to be part of functional sites (e.g., catalytic sites, binding pockets).")
+            with st.expander("🎯 Confidence of User-Defined Functional Site Residues"):
+                st.markdown("Enter comma-separated residue indices (1-based) of a known or hypothesized functional site to check their pLDDT scores.")
+                site_residues_input = st.text_input("Functional Site Residues (e.g., 10,12,45,102):", key="conf_func_site_input")
+                if site_residues_input:
+                    try:
+                        site_indices = [int(x.strip()) - 1 for x in site_residues_input.split(',') if x.strip().isdigit()] # 0-indexed
+                        site_indices = [idx for idx in site_indices if 0 <= idx < data['length']] # Validate indices
+                        if site_indices:
+                            site_plddt = data['plddt'][site_indices]
+                            avg_site_plddt = np.mean(site_plddt)
+                            st.metric(label=f"Average pLDDT of Defined Site ({len(site_indices)} residues)", value=f"{avg_site_plddt:.2f}")
+                            st.write(f"pLDDT scores for site residues: {', '.join([f'{idx+1}:{data['plddt'][idx]:.2f}' for idx in site_indices])}")
+                            if avg_site_plddt < 70:
+                                st.warning("The defined functional site has relatively low average confidence, which may impact functional interpretation.")
+                    except Exception as e:
+                        st.error(f"Error parsing residue indices: {e}")
 
             with st.expander("🗺️ 3D Confidence Mapping (Conceptual)"):
                 st.info("This would typically involve coloring a 3D representation of the protein by pLDDT scores. Below is a conceptual 1D representation.")
@@ -1602,20 +1625,22 @@ if st.session_state.current_prediction:
                 st.markdown("Suggests regions with low pLDDT scores that could be candidates for further computational refinement (e.g., using local docking, loop modeling) or experimental structure determination.")
 
             with st.expander("🔬 Correlation with Theoretical B-Factors (Simulated)"):
-                # Generate simulated B-factors that might inversely correlate with pLDDT
-                simulated_b_factors = 50 - (data['plddt'] / 2.5) + np.random.normal(0, 5, data['length'])
-                simulated_b_factors = np.clip(simulated_b_factors, 5, 100)
-                
-                df_b_factors = pd.DataFrame({'pLDDT': data['plddt'], 'Simulated_B_Factor': simulated_b_factors})
-                correlation = df_b_factors['pLDDT'].corr(df_b_factors['Simulated_B_Factor'])
-                
-                fig_b_corr = px.scatter(df_b_factors, x='pLDDT', y='Simulated_B_Factor',
-                                        title=f"Predicted pLDDT vs. Simulated B-Factor (Correlation: {correlation:.2f})",
-                                        labels={'pLDDT': 'pLDDT Score', 'Simulated_B_Factor': 'Simulated B-Factor (Å²)'},
-                                        trendline="ols", trendline_color_override="red")
-                st.plotly_chart(fig_b_corr, use_container_width=True)
-                st.markdown(f"**Correlation Coefficient (Simulated Data): {correlation:.2f}**")
-                st.markdown("If experimental B-factors are available, they can be correlated with pLDDT. Lower pLDDT scores (higher uncertainty) sometimes correlate with higher B-factors (more flexibility), though this is not always the case.")
+                st.markdown("Upload a CSV file with two columns: 'Residue_Index' (1-based) and 'B_Factor'.")
+                uploaded_b_factors_file = st.file_uploader("Upload B-Factor CSV", type="csv", key="conf_b_factor_upload")
+                if uploaded_b_factors_file:
+                    try:
+                        df_exp_b = pd.read_csv(uploaded_b_factors_file)
+                        if 'Residue_Index' in df_exp_b.columns and 'B_Factor' in df_exp_b.columns and len(df_exp_b) == data['length']:
+                            df_merged_b = pd.DataFrame({'pLDDT': data['plddt'], 'Experimental_B_Factor': df_exp_b['B_Factor']})
+                            correlation_b = df_merged_b['pLDDT'].corr(df_merged_b['Experimental_B_Factor'])
+                            fig_b_corr_exp = px.scatter(df_merged_b, x='pLDDT', y='Experimental_B_Factor', title=f"pLDDT vs. Experimental B-Factor (Correlation: {correlation_b:.2f})", trendline="ols", trendline_color_override="red")
+                            st.plotly_chart(fig_b_corr_exp, use_container_width=True)
+                            st.markdown(f"**Correlation Coefficient:** {correlation_b:.2f}")
+                        else:
+                            st.error("CSV must contain 'Residue_Index' and 'B_Factor' columns and match protein length.")
+                    except Exception as e:
+                        st.error(f"Error processing B-Factor file: {e}")
+                st.markdown("This tool correlates pLDDT scores with experimentally determined B-factors. Lower pLDDT (higher uncertainty) sometimes correlates with higher B-factors (more flexibility).")
 
             with st.expander("🌐 Confidence of Surface vs. Core Residues"):
                 st.info("Placeholder for comparing average pLDDT scores of surface-exposed residues versus buried core residues.")
@@ -1623,8 +1648,6 @@ if st.session_state.current_prediction:
                 st.info("Placeholder for generating warnings for regions with critically low pLDDT scores that might impact functional interpretation.")
             with st.expander("🔄 Confidence Stability Across Multiple Runs (if applicable)"):
                 st.info("Placeholder for assessing the stability of pLDDT scores if multiple prediction runs were performed.")
-            with st.expander("📉 Confidence Score Entropy"):
-                st.info("Placeholder for calculating the entropy of pLDDT scores as a measure of confidence heterogeneity.")
             with st.expander("🔎 Localized Confidence Minima/Maxima"):
                 st.info("Placeholder for identifying specific residues or short segments that are local minima or maxima in pLDDT scores.")
             with st.expander("📚 Confidence Score Comparison to Database Averages (for similar folds)"):
@@ -1633,8 +1656,6 @@ if st.session_state.current_prediction:
                 st.info("Placeholder for analyzing pLDDT scores specifically at the predicted boundaries between structural domains.")
             with st.expander("⚡ Confidence Correlation with Electrostatic Potential"):
                 st.info("Placeholder for exploring potential correlations between local pLDDT scores and calculated electrostatic potentials.")
-            with st.expander("💧 Confidence Correlation with Hydrophobicity"):
-                st.info("Placeholder for exploring potential correlations between local pLDDT scores and residue hydrophobicity.")
             with st.expander("📐 Confidence Score vs. Local Geometry"):
                 st.info("Placeholder for analyzing if regions with poor local geometry (e.g., Ramachandran outliers) correlate with low pLDDT.")
             with st.expander("🏷️ Confidence of PTM Site Residues"):
@@ -1651,8 +1672,6 @@ if st.session_state.current_prediction:
                 st.info("Placeholder for identifying regions where pLDDT scores remain consistently high or low.")
             with st.expander("⚙️ Confidence-Weighted Structural Alignment"):
                 st.info("Placeholder for using pLDDT scores to weight residues during structural alignment against homologs.")
-            with st.expander("🧬 Confidence of Residues in Known Motifs"):
-                st.info("Placeholder for checking pLDDT scores of residues part of known sequence or structural motifs.")
             with st.expander("🔬 Confidence Score Variance Analysis"):
                 st.info("Placeholder for analyzing the variance of pLDDT scores in local windows.")
             with st.expander("↔️ Confidence Score Symmetry (for symmetric proteins)"):
@@ -1661,8 +1680,6 @@ if st.session_state.current_prediction:
                 st.info("Placeholder for analyzing pLDDT scores of residues predicted to be at protein-protein interfaces.")
             with st.expander("💊 Confidence of Ligand-Binding Pocket Residues"):
                 st.info("Placeholder for analyzing pLDDT scores of residues forming predicted ligand-binding pockets.")
-            with st.expander("🧱 Confidence of Aggregation-Prone Regions"):
-                st.info("Placeholder for correlating pLDDT scores with predicted aggregation-prone regions.")
             with st.expander("🌀 Confidence of Flexible Hinge Regions"):
                 st.info("Placeholder for identifying potential flexible hinge regions based on patterns in pLDDT scores.")
             with st.expander("⚡ Confidence Score vs. Predicted ddG of Mutation"):
@@ -1671,12 +1688,116 @@ if st.session_state.current_prediction:
                 st.info("Placeholder for mapping pLDDT scores to a pseudo-temperature scale for visualization.")
             with st.expander("🗺️ Confidence Landscape Visualization"):
                 st.info("Placeholder for more advanced 2D or 3D visualizations of the confidence 'landscape' across the protein.")
-            with st.expander("📉 Confidence Score Autocorrelation"):
-                st.info("Placeholder for analyzing the autocorrelation of pLDDT scores to understand characteristic lengths of confident/unconfident regions.")
-            with st.expander("📊 Confidence Score Distribution by Residue Type"):
-                st.info("Placeholder for analyzing if certain amino acid types tend to have higher or lower pLDDT scores in this protein.")
             with st.expander("🔗 Confidence of Disulfide-Bonded Cysteines"):
                 st.info("Placeholder for checking pLDDT scores of cysteine residues predicted to form disulfide bonds.")
+
+            # Practical Implementations for previously placeholder/mocked tools
+            with st.expander("📉 Confidence Score Entropy"):
+                plddt_counts = np.histogram(data['plddt'], bins=10, range=(0,100))[0]
+                plddt_probs = plddt_counts / data['length']
+                score_entropy = entropy(plddt_probs, base=2)
+                st.metric(label="pLDDT Score Entropy (bits)", value=f"{score_entropy:.3f}")
+                st.markdown("Measures the heterogeneity of pLDDT scores. Higher entropy indicates more diverse confidence levels across the protein.")
+
+            with st.expander("🔎 Localized Confidence Minima/Maxima"):
+                from scipy.signal import find_peaks
+                plddt_scores = data['plddt']
+                minima_indices, _ = find_peaks(-plddt_scores, distance=5, prominence=5) # Find peaks in negative for minima
+                maxima_indices, _ = find_peaks(plddt_scores, distance=5, prominence=5) # Prominence helps filter small peaks
+
+                st.markdown(f"**Localized Minima (Indices):** {', '.join(map(str, minima_indices[:5]+1))}{'...' if len(minima_indices) > 5 else ''}")
+                st.markdown(f"**Localized Maxima (Indices):** {', '.join(map(str, maxima_indices[:5]+1))}{'...' if len(maxima_indices) > 5 else ''}")
+                st.markdown("Identifies specific residues or short segments that are local minima or maxima in pLDDT scores, indicating focal points of low or high confidence.")
+
+            with st.expander("💧 Confidence Correlation with Hydrophobicity (Kyte-Doolittle)"):
+                hydrophobicity_scores = [AA_HYDROPHOBICITY_KD.get(res, 0) for res in data['sequence']]
+                df_hydro_conf = pd.DataFrame({'pLDDT': data['plddt'], 'Hydrophobicity': hydrophobicity_scores})
+                correlation_hydro = df_hydro_conf['pLDDT'].corr(df_hydro_conf['Hydrophobicity'])
+                fig_hydro_corr = px.scatter(df_hydro_conf, x='Hydrophobicity', y='pLDDT', title=f"pLDDT vs. Kyte-Doolittle Hydrophobicity (Correlation: {correlation_hydro:.2f})", trendline="ols", trendline_color_override="green")
+                st.plotly_chart(fig_hydro_corr, use_container_width=True)
+                st.markdown(f"**Correlation Coefficient:** {correlation_hydro:.2f}")
+                st.markdown("Examines if residue confidence correlates with its hydrophobicity. For example, buried hydrophobic cores might show higher confidence.")
+
+            with st.expander("🔬 Confidence Score Variance Analysis (Local Window)"):
+                window_var = st.slider("Variance Window Size:", min_value=3, max_value=max(5, data['length']//10), value=min(7, data['length']//10), key="conf_var_window")
+                plddt_series_var = pd.Series(data['plddt'])
+                local_variance = plddt_series_var.rolling(window=window_var, center=True, min_periods=1).var()
+                fig_var = px.line(x=list(range(1, data['length'] + 1)), y=local_variance, title=f"Local pLDDT Score Variance (Window: {window_var})", labels={'x':'Residue Index', 'y':'Variance'})
+                st.plotly_chart(fig_var, use_container_width=True)
+                st.markdown("Calculates the variance of pLDDT scores in local windows. High variance indicates rapidly changing confidence.")
+
+            with st.expander("📉 Confidence Score Autocorrelation"):
+                max_lags = min(50, data['length'] // 2 -1)
+                if max_lags > 0:
+                    autocorr_values = acf(data['plddt'], nlags=max_lags, fft=False) # fft=False for robustness with smaller series
+                    fig_autocorr = px.bar(x=list(range(len(autocorr_values))), y=autocorr_values, title=f"pLDDT Autocorrelation (up to {max_lags} lags)", labels={'x':'Lag', 'y':'Autocorrelation'})
+                    st.plotly_chart(fig_autocorr, use_container_width=True)
+                    st.markdown("Analyzes the autocorrelation of pLDDT scores to understand characteristic lengths of confident/unconfident regions. High autocorrelation at a given lag means scores are similar at that distance.")
+                else:
+                    st.info("Protein too short for meaningful autocorrelation analysis.")
+
+            with st.expander("📊 Confidence Score Distribution by Residue Type"):
+                df_res_conf = pd.DataFrame({'Residue': list(data['sequence']), 'pLDDT': data['plddt']})
+                fig_res_conf_box = px.box(df_res_conf, x='Residue', y='pLDDT', color='Residue', title="pLDDT Distribution by Amino Acid Type", category_orders={"Residue": sorted(list(set(data['sequence'])))})
+                st.plotly_chart(fig_res_conf_box, use_container_width=True)
+                avg_plddt_by_res = df_res_conf.groupby('Residue')['pLDDT'].mean().sort_values(ascending=False)
+                st.write("Average pLDDT per Residue Type:")
+                st.dataframe(avg_plddt_by_res.reset_index(), use_container_width=True)
+                st.markdown("Analyzes if certain amino acid types tend to have higher or lower pLDDT scores in this specific protein prediction.")
+
+            with st.expander("💊 Confidence of User-Defined Ligand-Binding Pocket Residues"):
+                st.markdown("Enter comma-separated residue indices (1-based) of a known or hypothesized ligand-binding pocket to check their pLDDT scores.")
+                pocket_residues_input = st.text_input("Pocket Residues (e.g., 22,25,50,98):", key="conf_pocket_site_input")
+                if pocket_residues_input:
+                    try:
+                        pocket_indices = [int(x.strip()) - 1 for x in pocket_residues_input.split(',') if x.strip().isdigit()] # 0-indexed
+                        pocket_indices = [idx for idx in pocket_indices if 0 <= idx < data['length']] # Validate indices
+                        if pocket_indices:
+                            pocket_plddt = data['plddt'][pocket_indices]
+                            avg_pocket_plddt = np.mean(pocket_plddt)
+                            st.metric(label=f"Average pLDDT of Defined Pocket ({len(pocket_indices)} residues)", value=f"{avg_pocket_plddt:.2f}")
+                            st.write(f"pLDDT scores for pocket residues: {', '.join([f'{idx+1}:{data['plddt'][idx]:.2f}' for idx in pocket_indices])}")
+                            if avg_pocket_plddt < 70:
+                                st.warning("The defined ligand-binding pocket has relatively low average confidence.")
+                        else:
+                            st.info("No valid residue indices provided for the pocket.")
+                    except Exception as e:
+                        st.error(f"Error parsing residue indices: {e}")
+
+            with st.expander("🌀 Confidence of Flexible Hinge Regions (Inferred)"):
+                st.markdown("Hinge regions are often characterized by lower confidence scores flanked by higher confidence domains. This tool looks for such patterns.")
+                # Simple inference: look for significant dips in smoothed pLDDT
+                plddt_series_hinge = pd.Series(data['plddt'])
+                smoothed_plddt = plddt_series_hinge.rolling(window=max(5, data['length']//20), center=True, min_periods=1).mean()
+                potential_hinges = smoothed_plddt[ (smoothed_plddt < smoothed_plddt.quantile(0.25)) & (plddt_series_hinge < 60) ] # Low smoothed and raw pLDDT
+                if not potential_hinges.empty:
+                    st.write(f"Found {len(potential_hinges)} potential flexible/hinge residues (smoothed pLDDT < {smoothed_plddt.quantile(0.25):.2f} and raw pLDDT < 60).")
+                    st.write(f"Example indices: {', '.join(map(str, potential_hinges.index.map(lambda x: x+1).tolist()[:10]))}{'...' if len(potential_hinges)>10 else ''}")
+                else:
+                    st.info("No clear flexible hinge regions inferred based on simple pLDDT dips.")
+
+            with st.expander("🌡️ Confidence Score Temperature Scale Mapping (Visualization)"):
+                # Map pLDDT to a color scale (e.g., blue=high, red=low)
+                df_temp_map = pd.DataFrame({'Residue Index': list(range(1, data['length'] + 1)), 'pLDDT': data['plddt']})
+                fig_temp_map = px.bar(df_temp_map, x='Residue Index', y='pLDDT', color='pLDDT',
+                                      title="pLDDT Mapped to Temperature-Like Color Scale",
+                                      color_continuous_scale='RdYlBu', labels={'pLDDT': 'Confidence (Blue=High, Red=Low)'})
+                fig_temp_map.update_layout(yaxis_range=[0,100], height=300)
+                st.plotly_chart(fig_temp_map, use_container_width=True)
+                st.markdown("Visualizes pLDDT scores using a color scale often associated with temperature factors (Blue=cold/ordered/confident, Red=hot/disordered/unconfident).")
+
+            with st.expander("🗺️ Confidence Landscape Visualization (Smoothed Profile)"):
+                # Use moving average as a representation of a smoothed landscape
+                window_landscape = st.slider("Landscape Smoothing Window:", min_value=3, max_value=max(5, data['length']//5), value=min(10, data['length']//10), key="conf_landscape_window")
+                plddt_series_land = pd.Series(data['plddt'])
+                smoothed_landscape = plddt_series_land.rolling(window=window_landscape, center=True, min_periods=1).mean()
+                fig_land = go.Figure()
+                fig_land.add_trace(go.Scatter(x=list(range(1, data['length'] + 1)), y=data['plddt'], mode='lines', name='Raw pLDDT', line=dict(color='rgba(173,216,230,0.5)', width=1))) # Light blue for raw
+                fig_land.add_trace(go.Scatter(x=list(range(1, data['length'] + 1)), y=smoothed_landscape, mode='lines', name=f'Smoothed Landscape (Window: {window_landscape})', line=dict(color='navy', width=2.5)))
+                fig_land.update_layout(title="Confidence Landscape (Smoothed pLDDT Profile)", xaxis_title="Residue Index", yaxis_title="pLDDT Score", height=350)
+                st.plotly_chart(fig_land, use_container_width=True)
+                st.markdown("Provides a smoothed view of the confidence scores, highlighting broader regions of high or low confidence, akin to a 'landscape'.")
+
     
     with tab_map["DOMAIN"]:
         st.subheader("Domain Architecture Analysis")
