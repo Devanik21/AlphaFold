@@ -2853,7 +2853,7 @@ if st.session_state.current_prediction:
         st.markdown("---")
         st.markdown("_Note: Folding pathway insights are highly conceptual and mock-generated. Real folding studies involve complex experiments and simulations (e.g., MD, kinetic studies)._")
 
-    with tab_map["PPI"]:
+    with tab_map["PPI_IF"]:
         st.subheader("Protein-Protein Interface Analysis")
         sequence_length = data.get('length', 100) # Ensure sequence_length is defined
         # Assuming one primary mock interface for simplicity here
