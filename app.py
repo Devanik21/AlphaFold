@@ -2644,7 +2644,6 @@ if st.session_state.current_prediction:
 
                 st.markdown("##### Predicted Allosteric Mechanism (Conceptual)")
                 st.markdown(f"The predicted allosteric sites might modulate protein function via **{random.choice(['conformational change propagation', 'pocket opening/closing dynamics', 'interface stabilization/destabilization'])}**.")
-                st.plotly_chart(fig_allo_score, use_container_width=True)
         
         st.markdown("---")
         st.markdown("_Note: Allosteric site data is mock-generated. Real analysis uses tools like AlloPred, PARS, or specialized MD simulations._")
