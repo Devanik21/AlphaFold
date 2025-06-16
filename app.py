@@ -534,6 +534,21 @@ def generate_mock_nmr_spectra_data(sequence_length):
         intensity += np.exp(-((ppm_range - peak_pos)**2) / (2 * (random.uniform(0.01, 0.05))**2)) * random.uniform(0.1, 1)
     return pd.DataFrame({"Chemical_Shift_ppm": ppm_range, "Intensity_Arbitrary": intensity * 100})
 
+def generate_mock_functional_prediction_data(sequence_length, domains_data):
+    go_terms = {
+        "Molecular Function": [f"GO:000{random.randint(1000,9999)} - {random.choice(['ATP binding', 'DNA binding', 'protein kinase activity', 'receptor activity', 'catalytic activity', 'transporter activity'])} (Score: {random.uniform(0.6,0.95):.2f})"],
+        "Biological Process": [f"GO:000{random.randint(1000,9999)} - {random.choice(['metabolic process', 'signal transduction', 'cell cycle', 'transcription', 'translation', 'immune response'])} (Score: {random.uniform(0.5,0.9):.2f})"],
+        "Cellular Component": [f"GO:000{random.randint(1000,9999)} - {random.choice(['nucleus', 'cytoplasm', 'mitochondrion', 'plasma membrane', 'ribosome', 'endoplasmic reticulum'])} (Score: {random.uniform(0.4,0.85):.2f})"]
+    }
+    if random.random() > 0.3: # Add a second term sometimes
+        go_terms["Molecular Function"].append(f"GO:000{random.randint(1000,9999)} - {random.choice(['ion binding', 'structural molecule activity', 'enzyme regulator activity'])} (Score: {random.uniform(0.5,0.8):.2f})")
+
+    ec_number = "N/A"
+    if any(d['type'] == 'Enzymatic' for d in domains_data) or random.random() < 0.2: # If enzymatic domain or 20% chance
+        ec_number = f"{random.randint(1,6)}.{random.randint(1,20)}.{random.randint(1,20)}.{random.randint(1,100)}"
+
+    return {"go_terms": go_terms, "ec_number": ec_number, "predicted_pathways_mock": [random.choice(["Glycolysis", "Citric Acid Cycle", "MAPK signaling", "Apoptosis", "DNA Repair"]) for _ in range(random.randint(0,2))]}
+
 def generate_mock_contact_map_data(sequence_length):
     contacts = np.random.rand(sequence_length, sequence_length) < 0.05 # 5% chance of contact
     # Make it symmetric and remove self-contacts
@@ -972,6 +987,7 @@ if st.session_state.current_prediction:
         "SAX": "✨ SAXS Profile",
         "CRF": "🧊 Cryo-EM Fit",
         "XTP": "❄️ Crystallization",
+        "FUNC": "🔬 Functional Prediction",
         "DATA": "📋 Detailed Data"
     }
     
@@ -2911,6 +2927,35 @@ if st.session_state.current_prediction:
         st.markdown("Estimates the likelihood of a protein to form well-ordered crystals, based on surface properties like hydrophobicity, charge distribution, and conformational homogeneity. This is crucial for X-ray crystallography.")
         st.markdown("---")
         st.markdown("_Note: Crystallization propensity is mock-generated. Real prediction uses tools like XtalPred, SERp, or Surface Entropy Reduction analysis._")
+
+    with tab_map["FUNC"]:
+        st.subheader("Functional Prediction & Annotation")
+        sequence_length = data.get('length', 100)
+        domains_data_for_func = data.get('domains', [])
+        functional_data = generate_mock_functional_prediction_data(sequence_length, domains_data_for_func)
+
+        st.markdown("##### Gene Ontology (GO) Term Predictions (Mock)")
+        for go_category, terms in functional_data["go_terms"].items():
+            st.markdown(f"**{go_category}:**")
+            for term in terms:
+                st.markdown(f"- {term}")
+        
+        st.markdown("---")
+        st.markdown("##### Enzyme Commission (EC) Number Prediction (Mock)")
+        if functional_data["ec_number"] != "N/A":
+            st.success(f"**Predicted EC Number:** {functional_data['ec_number']}")
+            st.markdown("Indicates potential enzymatic activity. The EC number classifies enzymes based on the chemical reactions they catalyze.")
+        else:
+            st.info("No specific EC number predicted (protein may not be an enzyme or prediction confidence is low).")
+
+        st.markdown("---")
+        st.markdown("##### Predicted Biological Pathways (Mock)")
+        if functional_data["predicted_pathways_mock"]:
+            st.markdown(f"Potentially involved in: {', '.join(functional_data['predicted_pathways_mock'])}")
+        else:
+            st.info("No specific pathways strongly predicted.")
+        st.markdown("---")
+        st.markdown("_Note: Functional predictions are mock-generated. Real annotation uses tools like InterProScan, eggNOG-mapper, BLAST against curated databases (UniProt, GO, KEGG)._")
 
     # This was originally tab5, now it's the last tab
     with tab_map["DATA"]:
