@@ -788,7 +788,7 @@ def export_results(prediction_data, format_type):
 # Main UI
 st.markdown("""
 <div class="main-header">
-    <h1>🧬 AlphaFold Pro</h1>
+    <h1>🧬 AlphaFold </h1>
     <p>Advanced Protein Structure Prediction Suite</p>
     <p style="font-size: 0.9em; opacity: 0.8;">Powered by Google Gemini AI | Professional-Grade Analysis</p>
 </div>
