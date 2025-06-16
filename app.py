@@ -523,6 +523,17 @@ def generate_mock_ramachandran_data(sequence_length):
         phi_psi_pairs.append({"phi": round(phi,1), "psi": round(psi,1)})
     return pd.DataFrame(phi_psi_pairs)
 
+def generate_mock_nmr_spectra_data(sequence_length):
+    # Simplified mock 1D Proton NMR-like spectrum
+    ppm_range = np.linspace(0, 10, 500)
+    intensity = np.zeros_like(ppm_range)
+    num_peaks = sequence_length // 10 + random.randint(-5, 5)
+    num_peaks = max(5, num_peaks) # Ensure at least a few peaks
+    for _ in range(num_peaks):
+        peak_pos = random.uniform(0.5, 9.5)
+        intensity += np.exp(-((ppm_range - peak_pos)**2) / (2 * (random.uniform(0.01, 0.05))**2)) * random.uniform(0.1, 1)
+    return pd.DataFrame({"Chemical_Shift_ppm": ppm_range, "Intensity_Arbitrary": intensity * 100})
+
 def generate_mock_contact_map_data(sequence_length):
     contacts = np.random.rand(sequence_length, sequence_length) < 0.05 # 5% chance of contact
     # Make it symmetric and remove self-contacts
@@ -953,13 +964,17 @@ if st.session_state.current_prediction:
         "ALLO": "🔮 Allosteric Sites",
         "MEMB": "🧱 Membrane Topology",
         "FOLD": "⏳ Folding Pathway",
-        "PPI": "🤝 PPI Interface",
+        "PPI_IF": "🤝 PPI Interface", # Renamed from PPI to PPI_IF for clarity if needed, or keep as PPI
         "DRUG": "🎯 Druggability Analysis", # Shrunk from DRUGGABLE
         "CONS": "🛡️ Conservation Score",   # Shrunk from CONSERVE
+        # New tabs inserted here
+        "NMR_S": "📡 NMR Spectra (Mock)",
+        "SAXS_P": "✨ SAXS Profile (Mock)",
+        "CRYO_F": "🧊 Cryo-EM Fit (Mock)",
+        "XTAL_P": "❄️ Crystallization (Mock)",
         "DATA": "📋 Detailed Data"
     }
     
-    tab_keys = list(TAB_CODES.keys())
     # Unpack all tabs based on the order in TAB_CODES
     tabs_list = st.tabs(tab_keys)
     
@@ -2815,7 +2830,7 @@ if st.session_state.current_prediction:
         st.markdown("The landscape illustrates a simplified path from unfolded to folded state, possibly via intermediates (local minima).")
 
         st.markdown("##### Key Folding Parameters (Mock)")
-        st.markdown(f"- **Predicted Contact Order (Mock):** {random.uniform(0.1, 0.3) * sequence_length:.1f}")
+        st.markdown(f"- **Predicted Contact Order (Mock):** {random.uniform(0.1, 0.3) * sequence_length:.1f} (Higher means more non-local contacts)")
         st.markdown(f"- **Predicted Folding Rate Class (Mock):** {random.choice(['Fast (<1s)', 'Medium (1s-1min)', 'Slow (>1min)'])}")
         st.markdown(f"- **Chaperone Dependency Score (Mock):** {random.uniform(0.1, 0.8):.2f} (Higher means more likely to need chaperones)")
         st.markdown("---")
@@ -2823,7 +2838,7 @@ if st.session_state.current_prediction:
 
     with tab_map["PPI"]:
         st.subheader("Protein-Protein Interface Analysis")
-        sequence_length = data.get('length', 100)
+        sequence_length = data.get('length', 100) # Ensure sequence_length is defined
         # Assuming one primary mock interface for simplicity here
         mock_interface = generate_mock_ppi_interface_data(sequence_length, partner_protein_id=f"PROT_{random.randint(1000,9999)}")
         
@@ -2842,6 +2857,59 @@ if st.session_state.current_prediction:
         st.markdown(f"- **Predicted Hotspot Residues at Interface (Mock):** {', '.join(hotspot_residues_ppi)}")
         st.markdown("---")
         st.markdown("_Note: PPI interface data is mock-generated. Real analysis uses tools like PISA, InterProSurf, or docking simulations followed by interface characterization._")
+
+    with tab_map["NMR_S"]:
+        st.subheader("NMR Spectra Simulation (Mock)")
+        sequence_length = data.get('length', 100)
+        df_nmr = generate_mock_nmr_spectra_data(sequence_length)
+        
+        fig_nmr = px.line(df_nmr, x="Chemical_Shift_ppm", y="Intensity_Arbitrary",
+                          title="Mock 1D Proton NMR Spectrum",
+                          labels={"Chemical_Shift_ppm": "Chemical Shift (ppm)", "Intensity_Arbitrary": "Intensity"})
+        fig_nmr.update_layout(height=400)
+        st.plotly_chart(fig_nmr, use_container_width=True)
+        st.markdown(f"**Key Peaks (Mock):** Broad peak around {random.uniform(7,8.5):.1f} ppm (aromatic/amide), sharp peaks around {random.uniform(1,3):.1f} ppm (aliphatic).")
+        st.markdown("This is a highly simplified mock 1D spectrum. Real NMR analysis involves complex multi-dimensional experiments and assignments to correlate signals with specific atoms in the 3D structure.")
+        st.markdown("---")
+        st.markdown("_Note: NMR spectra are mock-generated. Real NMR requires experimental data and specialized processing software._")
+
+    with tab_map["SAXS_P"]:
+        st.subheader("SAXS Profile Analysis (Mock)")
+        df_saxs, rg_saxs_mock = generate_mock_saxs_profile() # Re-use existing function
+        
+        fig_saxs_tab = px.line(df_saxs, x="q_Angstrom_inv", y="Intensity_I_q_arbitrary_units", log_y=True,
+                           title="Predicted SAXS Profile (Mock)",
+                           labels={"q_Angstrom_inv": "q (Å⁻¹)", "Intensity_I_q_arbitrary_units": "Intensity (log scale)"})
+        fig_saxs_tab.update_layout(height=400)
+        st.plotly_chart(fig_saxs_tab, use_container_width=True)
+        
+        st.metric(label="Radius of Gyration (Rg) from SAXS (Mock)", value=f"{rg_saxs_mock:.1f} Å")
+        st.markdown(f"**Maximum Particle Dimension (Dmax) (Mock):** {rg_saxs_mock * random.uniform(2.5, 3.5):.1f} Å")
+        st.markdown("The SAXS profile provides information about the protein's overall shape, size, and degree of compactness in solution. The Radius of Gyration (Rg) is a key parameter derived from SAXS data.")
+        st.markdown("---")
+        st.markdown("_Note: SAXS profiles are mock-generated. Real SAXS analysis involves experimental scattering data and modeling._")
+
+    with tab_map["CRYO_F"]:
+        st.subheader("Cryo-EM Map Fitting Analysis (Mock)")
+        cryo_fit_data = generate_mock_cryoem_fit() # Re-use existing function
+        
+        st.metric(label="Simulated Cryo-EM Map Resolution (Mock)", value=f"{cryo_fit_data['Resolution_Angstrom_Mock']} Å")
+        st.metric(label="Cross-Correlation Score with Map (Mock)", value=f"{cryo_fit_data['Cross_Correlation_Score_Mock']:.3f}")
+        st.markdown(f"**Map Segmentation Quality (Mock):** {cryo_fit_data['Map_Segmentation_Quality_Mock']}")
+        st.markdown(f"**Model-to-Map FSC at 0.143 (Mock):** {random.uniform(0.4, 0.8):.2f}")
+        st.markdown("This section assesses how well the predicted atomic model fits into an experimental Cryo-Electron Microscopy (Cryo-EM) density map, if available. Higher cross-correlation and FSC scores indicate a better fit.")
+        st.markdown("---")
+        st.markdown("_Note: Cryo-EM fit data is mock-generated. Real analysis requires an experimental density map and fitting software._")
+
+    with tab_map["XTAL_P"]:
+        st.subheader("Crystallization Propensity Analysis (Mock)")
+        crystallization_data = generate_mock_crystallization_propensity() # Re-use existing function
+        st.metric(label="Overall Crystallization Propensity Score (Mock)", value=f"{crystallization_data['Overall_Propensity_Score_Mock']:.2f}")
+        st.markdown(f"**Number of Low Surface Entropy Patches (Mock):** {crystallization_data['Number_of_Low_Entropy_Patches_Mock']}")
+        st.markdown(f"**Largest Hydrophobic Patch Area (Mock):** {crystallization_data['Largest_Hydrophobic_Patch_Area_A2_Mock']:.1f} Å²")
+        st.markdown("Estimates the likelihood of a protein to form well-ordered crystals, based on surface properties like hydrophobicity, charge distribution, and conformational homogeneity. This is crucial for X-ray crystallography.")
+        st.markdown("---")
+        st.markdown("_Note: Crystallization propensity is mock-generated. Real prediction uses tools like XtalPred, SERp, or Surface Entropy Reduction analysis._")
 
     # This was originally tab5, now it's the last tab
     with tab_map["DATA"]:
