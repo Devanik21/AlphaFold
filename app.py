@@ -2605,7 +2605,7 @@ if st.session_state.current_prediction:
     with tab_map["ALLO"]:
         st.subheader("Allosteric Site Prediction")
         sequence_length = data.get('length', 100)
-        mock_allo_sites = generate_mock_allosteric_sites(sequence_length, num_sites=random.randint(0,3))
+        mock_allo_sites = generate_mock_allosteric_sites(sequence_length, num_sites=random.randint(1,3)) # Ensure at least 1 site is usually predicted
 
         if not mock_allo_sites:
             st.info("No distinct allosteric sites predicted for this protein.")
