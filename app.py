@@ -968,10 +968,10 @@ if st.session_state.current_prediction:
         "DRUG": "🎯 Druggability Analysis", # Shrunk from DRUGGABLE
         "CONS": "🛡️ Conservation Score",   # Shrunk from CONSERVE
         # New tabs inserted here
-        "NMR_S": "📡 NMR Spectra",
-        "SAXS_P": "✨ SAXS Profile",
-        "CRYO_F": "🧊 Cryo-EM Fit",
-        "XTAL_P": "❄️ Crystallization",
+        "NMR": "📡 NMR Spectra",
+        "SAX": "✨ SAXS Profile",
+        "CRF": "🧊 Cryo-EM Fit",
+        "XTP": "❄️ Crystallization",
         "DATA": "📋 Detailed Data"
     }
     
@@ -2859,7 +2859,7 @@ if st.session_state.current_prediction:
         st.markdown("---")
         st.markdown("_Note: PPI interface data is mock-generated. Real analysis uses tools like PISA, InterProSurf, or docking simulations followed by interface characterization._")
 
-    with tab_map["NMR_S"]:
+    with tab_map["NMR"]:
         st.subheader("NMR Spectra Simulation (Mock)")
         sequence_length = data.get('length', 100)
         df_nmr = generate_mock_nmr_spectra_data(sequence_length)
@@ -2874,7 +2874,7 @@ if st.session_state.current_prediction:
         st.markdown("---")
         st.markdown("_Note: NMR spectra are mock-generated. Real NMR requires experimental data and specialized processing software._")
 
-    with tab_map["SAXS_P"]:
+    with tab_map["SAX"]:
         st.subheader("SAXS Profile Analysis (Mock)")
         df_saxs, rg_saxs_mock = generate_mock_saxs_profile() # Re-use existing function
         
@@ -2890,7 +2890,7 @@ if st.session_state.current_prediction:
         st.markdown("---")
         st.markdown("_Note: SAXS profiles are mock-generated. Real SAXS analysis involves experimental scattering data and modeling._")
 
-    with tab_map["CRYO_F"]:
+    with tab_map["CRF"]:
         st.subheader("Cryo-EM Map Fitting Analysis (Mock)")
         cryo_fit_data = generate_mock_cryoem_fit() # Re-use existing function
         
@@ -2902,7 +2902,7 @@ if st.session_state.current_prediction:
         st.markdown("---")
         st.markdown("_Note: Cryo-EM fit data is mock-generated. Real analysis requires an experimental density map and fitting software._")
 
-    with tab_map["XTAL_P"]:
+    with tab_map["XTP"]:
         st.subheader("Crystallization Propensity Analysis (Mock)")
         crystallization_data = generate_mock_crystallization_propensity() # Re-use existing function
         st.metric(label="Overall Crystallization Propensity Score (Mock)", value=f"{crystallization_data['Overall_Propensity_Score_Mock']:.2f}")
