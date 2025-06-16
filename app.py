@@ -2111,6 +2111,20 @@ if st.session_state.current_prediction:
                     # Domain sequence
                     domain_seq = data['sequence'][domain['start']:domain['end']]
                     st.text_area(f"Domain {i+1} Sequence:", domain_seq, height=100)
+
+                    # Mock domain-specific pLDDT
+                    domain_plddt_scores = data['plddt'][domain['start']:domain['end']]
+                    avg_domain_plddt = np.mean(domain_plddt_scores) if len(domain_plddt_scores) > 0 else np.nan
+                    st.metric(label="Average pLDDT for this Domain", value=f"{avg_domain_plddt:.2f}" if not np.isnan(avg_domain_plddt) else "N/A")
+
+            # Inter-domain linker analysis (if multiple domains)
+            if len(data['domains']) > 1:
+                st.subheader("Inter-Domain Linker Analysis")
+                for i in range(len(data['domains']) - 1):
+                    linker_start = data['domains'][i]['end'] + 1
+                    linker_end = data['domains'][i+1]['start'] - 1
+                    if linker_start <= linker_end:
+                        st.markdown(f"- **Linker {i+1} (Residues {linker_start}-{linker_end}):** Length {linker_end - linker_start + 1} AA. Avg. pLDDT (Mock): {np.mean(data['plddt'][linker_start-1:linker_end]):.2f}")
         else:
             st.info("No distinct domains identified in this protein")
     
@@ -2124,6 +2138,7 @@ if st.session_state.current_prediction:
         else:
             st.write(f"Predicted interactions for protein (first 15AA): `{protein_id}...`")
             
+            # Separate data for PPI and Ligand for clarity
             ppi_data = []
             ligand_data = []
 
@@ -2131,12 +2146,16 @@ if st.session_state.current_prediction:
                 if inter['details']['type'] == "PPI":
                     ppi_data.append({
                         "Partner Protein ID": inter['partner_id'],
-                        "Confidence": inter['details']['confidence']
+                        "Confidence": inter['details']['confidence'],
+                        "Predicted Interface Residues (Mock)": ", ".join(map(str, sorted(random.sample(range(1, data['length']+1), random.randint(5,15))))),
+                        "Interaction Type (Mock)": random.choice(["Direct", "Indirect", "Transient"])
                     })
                 else: # Protein-Ligand
                     ligand_data.append({
                         "Ligand ID": inter['partner_id'],
-                        "Predicted Affinity (nM)": inter['details']['affinity_nM']
+                        "Predicted Affinity (nM)": inter['details']['affinity_nM'],
+                        "Binding Site Residues (Mock)": ", ".join(map(str, sorted(random.sample(range(1, data['length']+1), random.randint(3,10))))),
+                        "Predicted Binding Mode (Mock)": random.choice(["Competitive", "Non-competitive", "Allosteric"])
                     })
             
             if ppi_data:
@@ -2144,7 +2163,8 @@ if st.session_state.current_prediction:
                 df_ppi = pd.DataFrame(ppi_data)
                 st.dataframe(df_ppi, use_container_width=True)
                 
-                fig_ppi_scores = px.bar(df_ppi, x="Partner Protein ID", y="Confidence", title="PPI Confidence Scores",
+                if not df_ppi.empty:
+                    fig_ppi_scores = px.bar(df_ppi, x="Partner Protein ID", y="Confidence", title="PPI Confidence Scores",
                                         color="Confidence", color_continuous_scale=px.colors.sequential.Viridis)
                 st.plotly_chart(fig_ppi_scores, use_container_width=True)
 
@@ -2153,10 +2173,23 @@ if st.session_state.current_prediction:
                 df_ligand = pd.DataFrame(ligand_data)
                 st.dataframe(df_ligand, use_container_width=True)
 
-                fig_ligand_affinity = px.bar(df_ligand, x="Ligand ID", y="Predicted Affinity (nM)", title="Predicted Ligand Affinities",
+                if not df_ligand.empty:
+                    fig_ligand_affinity = px.bar(df_ligand, x="Ligand ID", y="Predicted Affinity (nM)", title="Predicted Ligand Affinities",
                                              color="Predicted Affinity (nM)", color_continuous_scale=px.colors.sequential.Plasma_r)
                 fig_ligand_affinity.update_yaxes(type="log")
                 st.plotly_chart(fig_ligand_affinity, use_container_width=True)
+            
+            # Conceptual Network Graph for PPIs
+            if ppi_data:
+                st.markdown("##### Conceptual PPI Network")
+                dot_string = "digraph G {\n rankdir=LR;\n node [shape=protein, style=filled, color=skyblue];\n"
+                dot_string += f' "{protein_id}..." [label="{protein_id}...", fillcolor=lightcoral];\n' # Query protein
+                for ppi_entry in ppi_data:
+                    partner = ppi_entry["Partner Protein ID"]
+                    confidence = ppi_entry["Confidence"]
+                    dot_string += f' "{protein_id}..." -> "{partner}" [label="{confidence:.2f}", penwidth={1 + confidence*2}];\n'
+                dot_string += "}"
+                st.graphviz_chart(dot_string)
 
             st.markdown("---")
             st.markdown("_Note: Interaction data is mock-generated. For real analysis, use tools like STRING-DB, BioGRID for PPIs, and docking software for ligand interactions._")
@@ -2168,17 +2201,33 @@ if st.session_state.current_prediction:
 
         st.write("Predicted effects of single amino acid substitutions on protein stability (ΔΔG).")
         st.dataframe(df_mutations, use_container_width=True)
-
-        fig_ddg = px.bar(df_mutations, x="Mutation", y="Predicted_ddG_kcal_mol", 
+        
+        if not df_mutations.empty:
+            fig_ddg = px.bar(df_mutations, x="Mutation", y="Predicted_ddG_kcal_mol", 
                          color="Predicted_Effect", title="Predicted Stability Changes (ΔΔG)",
                          labels={"Predicted_ddG_kcal_mol": "ΔΔG (kcal/mol)"},
                          color_discrete_map={
                              "Destabilizing": "orangered",
                              "Stabilizing": "mediumseagreen",
                              "Neutral": "lightslategrey"
-                         })
-        fig_ddg.add_hline(y=0, line_dash="dash", line_color="black")
-        st.plotly_chart(fig_ddg, use_container_width=True)
+                         }, height=400)
+            fig_ddg.add_hline(y=0, line_dash="dash", line_color="black")
+            st.plotly_chart(fig_ddg, use_container_width=True)
+
+            # Distribution of Predicted Effects
+            effect_counts = df_mutations['Predicted_Effect'].value_counts().reset_index()
+            effect_counts.columns = ['Effect', 'Count']
+            fig_effect_dist = px.pie(effect_counts, values='Count', names='Effect', 
+                                     title="Distribution of Predicted Mutational Effects",
+                                     color_discrete_map={"Destabilizing": "orangered", "Stabilizing": "mediumseagreen", "Neutral": "lightslategrey"})
+            st.plotly_chart(fig_effect_dist, use_container_width=True)
+
+            # Hotspot prediction (mock)
+            hotspots = df_mutations[np.abs(df_mutations['Predicted_ddG_kcal_mol']) > 1.5] # Arbitrary threshold for hotspot
+            if not hotspots.empty:
+                st.markdown("##### Potential Stability Hotspots (Mock |ΔΔG| > 1.5)")
+                st.dataframe(hotspots[['Mutation', 'Predicted_ddG_kcal_mol', 'Predicted_Effect']].sort_values(by='Predicted_ddG_kcal_mol', key=abs, ascending=False), use_container_width=True)
+            
         
         st.markdown("---")
         st.markdown("_Note: Mutational effects are mock-generated. Real analysis requires tools like FoldX, Rosetta, or specialized predictors._")
@@ -2221,6 +2270,26 @@ if st.session_state.current_prediction:
         )
         st.plotly_chart(fig_rmsd, use_container_width=True)
         st.markdown("RMSD plot shows the deviation of the protein structure from its initial conformation over time. A stable RMSD suggests the protein has reached equilibrium.")
+
+        # Mock Radius of Gyration (Rg) over time
+        rg_mock_data = rmsd_mock_data * random.uniform(1.5, 2.5) + random.uniform(10,15) # Scale RMSD to mock Rg
+        rg_mock_data = np.clip(rg_mock_data, 5, 50)
+        fig_rg_time = go.Figure(data=[go.Scatter(x=list(sim_time_ns), y=list(rg_mock_data), mode='lines', name='Rg (Å)',
+                                             line=dict(color='green'))])
+        fig_rg_time.update_layout(
+            title="Radius of Gyration (Rg) Over Simulation Time",
+            xaxis_title="Time (ns)",
+            yaxis_title="Rg (Å)",
+            height=350
+        )
+        st.plotly_chart(fig_rg_time, use_container_width=True)
+        st.markdown("Rg plot shows changes in protein compactness over the simulation.")
+
+        # Mock Number of Hydrogen Bonds over time
+        hbond_mock_data = np.random.randint(seq_len_dyn // 2, seq_len_dyn * 1.5, size=len(sim_time_ns)) + (np.sin(sim_time_ns / 15) * seq_len_dyn * 0.1).astype(int)
+        fig_hbond_time = px.line(x=sim_time_ns, y=hbond_mock_data, title="Number of Intra-Protein H-Bonds Over Time", labels={'x':'Time (ns)', 'y':'H-Bond Count'})
+        st.plotly_chart(fig_hbond_time, use_container_width=True)
+        st.markdown("Fluctuations in H-bonds can indicate conformational changes or (un)folding events.")
         
         st.markdown("---")
         st.markdown("_Note: MD simulation data is mock-generated. Real simulations require specialized software (GROMACS, Amber, etc.) and significant computational resources._")
@@ -2244,13 +2313,24 @@ if st.session_state.current_prediction:
                     st.markdown(f"**Key Residues:** `{pocket['residues']}`")
             
             df_pockets = pd.DataFrame(mock_pockets)
-            fig_druggability = px.bar(df_pockets, x="pocket_id", y="druggability_score",
+            if not df_pockets.empty:
+                fig_druggability = px.bar(df_pockets, x="pocket_id", y="druggability_score",
                                       title="Druggability Scores of Predicted Pockets",
                                       color="druggability_score",
                                       color_continuous_scale=px.colors.sequential.Aggrnyl,
                                       labels={"pocket_id": "Pocket ID", "druggability_score": "Druggability Score"})
-            st.plotly_chart(fig_druggability, use_container_width=True)
-        
+                st.plotly_chart(fig_druggability, use_container_width=True)
+
+                # Pharmacophore features (mock)
+                st.markdown("##### Mock Pharmacophore Features for Top Pocket")
+                top_pocket = df_pockets.sort_values(by="druggability_score", ascending=False).iloc[0]
+                st.markdown(f"**{top_pocket['pocket_id']}:**")
+                st.markdown(f"- H-Bond Donors: {random.randint(1,5)}")
+                st.markdown(f"- H-Bond Acceptors: {random.randint(1,5)}")
+                st.markdown(f"- Hydrophobic Contacts: {random.randint(3,10)}")
+                st.markdown(f"- Positive Ionizable: {random.randint(0,2)}")
+                st.markdown(f"- Negative Ionizable: {random.randint(0,2)}")
+
         st.markdown("---")
         st.markdown("_Note: Ligand binding site data is mock-generated. Real analysis uses tools like CASTp, fpocket, AutoDock Vina, or commercial software._")
 
@@ -2281,10 +2361,20 @@ if st.session_state.current_prediction:
         fig_cons.update_layout(height=350)
         st.plotly_chart(fig_cons, use_container_width=True)
 
-        highly_conserved_residues = df_conservation[df_conservation["Conservation Score"] >= 8]["Residue Index"].tolist()
-        highly_variable_residues = df_conservation[df_conservation["Conservation Score"] <= 2]["Residue Index"].tolist()
+        highly_conserved_residues = df_conservation[df_conservation["Conservation Score"] >= 7]["Residue Index"].tolist() # Adjusted threshold for example
+        highly_variable_residues = df_conservation[df_conservation["Conservation Score"] <= 3]["Residue Index"].tolist() # Adjusted threshold
 
-        if highly_conserved_residues:
+        # Conservation Score Distribution
+        fig_cons_dist = px.histogram(df_conservation, x="Conservation Score", nbins=9, title="Distribution of Conservation Scores", marginal="rug")
+        st.plotly_chart(fig_cons_dist, use_container_width=True)
+
+        st.markdown("##### Conservation Summary")
+        col_cons1, col_cons2 = st.columns(2)
+        with col_cons1:
+            st.metric(label="Average Conservation Score", value=f"{df_conservation['Conservation Score'].mean():.2f}")
+        with col_cons2:
+            st.metric(label="Std Dev of Conservation", value=f"{df_conservation['Conservation Score'].std():.2f}")
+        if highly_conserved_residues: # Check if list is not empty
             st.success(f"**Highly Conserved Residues (Score >= 8):** {len(highly_conserved_residues)} residues. Example indices: {', '.join(map(str, random.sample(highly_conserved_residues, k=min(5, len(highly_conserved_residues)))))}")
         if highly_variable_residues:
             st.warning(f"**Highly Variable Residues (Score <= 2):** {len(highly_variable_residues)} residues. Example indices: {', '.join(map(str, random.sample(highly_variable_residues, k=min(5, len(highly_variable_residues)))))}")
@@ -2325,6 +2415,16 @@ if st.session_state.current_prediction:
                              color="electrostatic_potential_mock",
                              color_continuous_scale=px.colors.diverging.RdBu)
         st.plotly_chart(fig_electro, use_container_width=True)
+
+        st.markdown("##### Surface Patch Analysis (Mock)")
+        st.markdown(f"- Largest Hydrophobic Patch (Mock): Centered around residue {random.randint(1, sequence_length)}, Area ~{random.randint(200,800)} Å²")
+        st.markdown(f"- Largest Positive Patch (Mock): Near residues {random.sample(range(1,sequence_length+1), 3)}, Potential for DNA/RNA binding.")
+        st.markdown(f"- Largest Negative Patch (Mock): Near residues {random.sample(range(1,sequence_length+1), 3)}, Potential for cation binding.")
+
+        st.markdown("##### Epitope Prediction (Mock)")
+        num_epitopes = random.randint(1,5)
+        for i in range(num_epitopes):
+            st.markdown(f"- Potential Epitope {i+1}: Residues {random.randint(1,sequence_length-10)}-{random.randint(1,sequence_length-10)+random.randint(5,10)} (Accessibility Score: {random.uniform(0.6,0.95):.2f})")
         st.markdown("---")
         st.markdown("_Note: Surface property data is mock-generated. Real analysis requires 3D structure and tools like PyMOL, VMD, APBS, NACCESS._")
 
@@ -2339,12 +2439,22 @@ if st.session_state.current_prediction:
                          "Sequence_Identity_Percent": st.column_config.NumberColumn(format="%.1f %%")
                      })
 
-        fig_rmsd_comp = px.bar(df_comparison, x="PDB_ID", y="RMSD_Angstrom",
+        if not df_comparison.empty:
+            fig_rmsd_comp = px.bar(df_comparison, x="PDB_ID", y="RMSD_Angstrom",
                                title="RMSD to Structural Homologs",
                                color="Sequence_Identity_Percent",
                                labels={"PDB_ID": "Homolog PDB ID", "RMSD_Angstrom": "RMSD (Å)"},
                                hover_data=["Description", "Sequence_Identity_Percent"])
-        st.plotly_chart(fig_rmsd_comp, use_container_width=True)
+            st.plotly_chart(fig_rmsd_comp, use_container_width=True)
+
+            # Scatter plot of RMSD vs Sequence Identity
+            fig_rmsd_vs_id = px.scatter(df_comparison, x="Sequence_Identity_Percent", y="RMSD_Angstrom",
+                                        text="PDB_ID", title="RMSD vs. Sequence Identity",
+                                        labels={"Sequence_Identity_Percent": "Sequence Identity (%)", "RMSD_Angstrom": "RMSD (Å)"},
+                                        hover_data=["Description"])
+            fig_rmsd_vs_id.update_traces(textposition='top center')
+            st.plotly_chart(fig_rmsd_vs_id, use_container_width=True)
+
         st.markdown("---")
         st.markdown("_Note: Structural comparison data is mock-generated. Real analysis uses tools like DALI, TM-align, CE, or FoldSeek against the PDB database._")
 
@@ -2377,6 +2487,15 @@ if st.session_state.current_prediction:
             st.metric("Avg. Bond Angle Deviation", f"{quality_metrics['avg_bond_angle_deviation_degrees']:.1f}°", help="Deviation from ideal bond angles.")
         st.metric("Overall GDT_TS (Mock)", f"{quality_metrics['overall_gdt_ts_mock']:.1f}", help="Global Distance Test Total Score. Higher is better (0-100).")
         
+        st.markdown("##### Rotamer Analysis (Mock Summary)")
+        rotamer_data_qual = generate_mock_rotamer_analysis(sequence_length) # Use existing function
+        st.markdown(f"- Favored Rotamers: {rotamer_data_qual['Favored_Rotamers_Percent']:.1f}%")
+        st.markdown(f"- Allowed Rotamers: {rotamer_data_qual['Allowed_Rotamers_Percent']:.1f}%")
+        st.markdown(f"- Outlier Rotamers: {rotamer_data_qual['Outlier_Rotamers_Percent']:.1f}% (Lower is better)")
+
+        st.markdown("##### Packing Quality (Mock)")
+        st.markdown(f"- Packing Defects Score (Mock): {random.uniform(0.1, 0.5):.2f} (Lower is better)")
+        st.markdown(f"- Number of Internal Voids > 10Å³ (Mock): {random.randint(0,3)}")
         st.markdown("---")
         st.markdown("_Note: Quality assessment data is mock-generated. Real analysis uses tools like PROCHECK, MolProbity, QMEAN, or validation servers._")
 
@@ -2426,6 +2545,14 @@ if st.session_state.current_prediction:
                 else:
                     st.error(f"Low overall druggability potential (Average Score: {avg_druggability:.2f}). Targeting this protein may be challenging.")
 
+            st.markdown("##### ADMET Properties for Top Pocket (Mock)")
+            if mock_pockets_for_drug:
+                top_pocket_admet = sorted(mock_pockets_for_drug, key=lambda x: x['druggability_score'], reverse=True)[0]
+                st.markdown(f"**For {top_pocket_admet['pocket_id']}:**")
+                st.markdown(f"- Lipinski Rule of 5 Violations (Conceptual): {random.randint(0,2)}")
+                st.markdown(f"- Predicted Toxicity Class (Conceptual): {random.choice(['Low', 'Medium', 'High'])}")
+                st.markdown(f"- Predicted Solubility (Conceptual): {random.choice(['Good', 'Moderate', 'Poor'])}")
+
         st.markdown("---")
         st.markdown("_Note: Druggability data is based on mock pocket predictions. Real analysis uses specialized software and considers factors like pocket geometry, hydrophobicity, and known drug targets._")
 
@@ -2463,6 +2590,14 @@ if st.session_state.current_prediction:
         num_highly_conserved = df_cons_scores[df_cons_scores["Conservation (0-1)"] >= conserved_threshold].shape[0]
         st.metric(label=f"Residues with Conservation >= {conserved_threshold}", value=f"{num_highly_conserved} ({num_highly_conserved/seq_len_cons*100:.1f}%)")
         
+        # Conservation Entropy
+        cons_counts = np.histogram(conservation_values, bins=10, range=(0,1))[0]
+        cons_probs = cons_counts / seq_len_cons
+        cons_entropy = entropy(cons_probs, base=2)
+        st.metric(label="Conservation Score Entropy (bits)", value=f"{cons_entropy:.3f}")
+
+        st.markdown(f"**Structurally Important Conserved Residues (Mock):** Residues {random.randint(1, seq_len_cons//2)}, {random.randint(seq_len_cons//2 + 1, seq_len_cons)} are predicted to be in the core and highly conserved.")
+
         st.markdown("This plot shows the evolutionary conservation of each residue. Highly conserved residues (score near 1) are often critical for protein structure or function.")
         st.markdown("---")
         st.markdown("_Note: Conservation scores are mock-generated. Real analysis relies on Multiple Sequence Alignments (MSAs) and tools like ConSurf or Rate4Site._")
@@ -2506,6 +2641,10 @@ if st.session_state.current_prediction:
                                           color_continuous_scale=px.colors.sequential.Tealgrn,
                                           labels={"site_id": "Site ID", "prediction_score": "Prediction Score"})
                 st.plotly_chart(fig_allo_score, use_container_width=True)
+
+                st.markdown("##### Predicted Allosteric Mechanism (Conceptual)")
+                st.markdown(f"The predicted allosteric sites might modulate protein function via **{random.choice(['conformational change propagation', 'pocket opening/closing dynamics', 'interface stabilization/destabilization'])}**.")
+                st.plotly_chart(fig_allo_score, use_container_width=True)
         
         st.markdown("---")
         st.markdown("_Note: Allosteric site data is mock-generated. Real analysis uses tools like AlloPred, PARS, or specialized MD simulations._")
@@ -2547,6 +2686,15 @@ if st.session_state.current_prediction:
                 )
                 fig_tmh.update_xaxes(range=[0, sequence_length + 1])
                 st.plotly_chart(fig_tmh, use_container_width=True)
+
+                st.markdown("##### Additional Membrane Properties (Mock)")
+                for i, helix_data in enumerate(membrane_data["helices"]):
+                    st.markdown(f"- **{helix_data['id']}:** Avg. Hydrophobicity (Mock): {random.uniform(1.5, 2.5):.2f}, Predicted Lipid Exposure (Mock): {random.uniform(0.4, 0.9):.2f}")
+                
+                st.markdown(f"**Re-entrant Loops Predicted (Mock):** {random.randint(0,1)}")
+                st.markdown(f"**Overall Orientation in Membrane (Mock):** N-terminus {membrane_data['n_terminus_location']}, C-terminus {membrane_data['c_terminus_location']} based on positive-inside rule.")
+
+
         st.markdown("---")
         st.markdown("_Note: Membrane topology data is mock-generated. Real predictions use algorithms like TMHMM, Phobius, or DeepTMHMM._")
 
@@ -2575,6 +2723,11 @@ if st.session_state.current_prediction:
                                     height=350)
         st.plotly_chart(fig_landscape, use_container_width=True)
         st.markdown("The landscape illustrates a simplified path from unfolded to folded state, possibly via intermediates (local minima).")
+
+        st.markdown("##### Key Folding Parameters (Mock)")
+        st.markdown(f"- **Predicted Contact Order (Mock):** {random.uniform(0.1, 0.3) * sequence_length:.1f}")
+        st.markdown(f"- **Predicted Folding Rate Class (Mock):** {random.choice(['Fast (<1s)', 'Medium (1s-1min)', 'Slow (>1min)'])}")
+        st.markdown(f"- **Chaperone Dependency Score (Mock):** {random.uniform(0.1, 0.8):.2f} (Higher means more likely to need chaperones)")
         st.markdown("---")
         st.markdown("_Note: Folding pathway insights are highly conceptual and mock-generated. Real folding studies involve complex experiments and simulations (e.g., MD, kinetic studies)._")
 
@@ -2591,6 +2744,12 @@ if st.session_state.current_prediction:
         st.metric(label="Predicted Binding Energy (Mock)", value=f"{mock_interface['predicted_binding_energy_kcal_mol_mock']:.1f} kcal/mol")
         with st.expander("View Interface Residues"):
             st.code(mock_interface['interface_residues'], language=None)
+        
+        st.markdown("##### Interface Properties (Mock)")
+        st.markdown(f"- **Interface Conservation Score (Mock):** {random.uniform(0.5, 0.9):.2f}")
+        st.markdown(f"- **Shape Complementarity Score (Mock):** {random.uniform(0.6, 0.8):.2f}")
+        hotspot_residues_ppi = sorted(random.sample(mock_interface['interface_residues'].split(','), k=min(len(mock_interface['interface_residues'].split(',')), random.randint(2,5))))
+        st.markdown(f"- **Predicted Hotspot Residues at Interface (Mock):** {', '.join(hotspot_residues_ppi)}")
         st.markdown("---")
         st.markdown("_Note: PPI interface data is mock-generated. Real analysis uses tools like PISA, InterProSurf, or docking simulations followed by interface characterization._")
 
@@ -2617,6 +2776,18 @@ if st.session_state.current_prediction:
             st.write(f"**Total Length:** {len(data['sequence'])} residues")
             st.write(f"**Molecular Weight:** ~{len(data['sequence']) * 110:.0f} Da")
             st.write(f"**Prediction Model:** {data['model_used']}")
+            # Mock Isoelectric Point & Extinction Coefficient
+            mock_pi = round(random.uniform(4.0, 10.0), 2)
+            mock_ext_coeff = int(data['sequence'].count('W') * 5500 + data['sequence'].count('Y') * 1490 + data['sequence'].count('C') * 125 * (random.randint(0,data['sequence'].count('C')//2))) # Approximation
+            st.write(f"**Isoelectric Point (pI) (Mock):** {mock_pi}")
+            st.write(f"**Extinction Coefficient (Mock):** {mock_ext_coeff} M⁻¹cm⁻¹")
+
+        # Amino Acid Composition
+        st.subheader("Amino Acid Composition")
+        aa_counts = pd.Series(list(data['sequence'])).value_counts().reset_index()
+        aa_counts.columns = ['Amino Acid', 'Count']
+        fig_aa_comp = px.bar(aa_counts, x='Amino Acid', y='Count', title="Amino Acid Composition", color='Amino Acid')
+        st.plotly_chart(fig_aa_comp, use_container_width=True)
         
         with col2:
             st.write(f"**Analysis Date:** {data['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}")
