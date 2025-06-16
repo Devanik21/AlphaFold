@@ -534,6 +534,21 @@ def generate_mock_nmr_spectra_data(sequence_length):
         intensity += np.exp(-((ppm_range - peak_pos)**2) / (2 * (random.uniform(0.01, 0.05))**2)) * random.uniform(0.1, 1)
     return pd.DataFrame({"Chemical_Shift_ppm": ppm_range, "Intensity_Arbitrary": intensity * 100})
 
+def generate_mock_chemical_shift_deviations(sequence_length):
+    # Simulate deviations from random coil or expected values
+    deviations = np.random.normal(loc=0, scale=0.5, size=sequence_length) + \
+                 5 * np.sin(np.arange(sequence_length) / (sequence_length/15)) # Add some structural influence
+    return pd.DataFrame({
+        "Residue_Index": range(1, sequence_length + 1),
+        "Calpha_Deviation_ppm_Mock": np.round(deviations, 2),
+        "Halpha_Deviation_ppm_Mock": np.round(deviations * random.uniform(0.3, 0.6), 2)
+    })
+
+def generate_mock_peak_integration_data(sequence_length):
+    # Simplified: just count AA types and present as "integrated peaks"
+    aa_counts = pd.Series(list("".join(random.choices(AMINO_ACIDS, k=sequence_length)))).value_counts().reset_index()
+    aa_counts.columns = ['Amino_Acid', 'Integrated_Intensity_Mock']
+    return aa_counts
 def generate_mock_functional_prediction_data(sequence_length, domains_data):
     go_terms = {
         "Molecular Function": [f"GO:000{random.randint(1000,9999)} - {random.choice(['ATP binding', 'DNA binding', 'protein kinase activity', 'receptor activity', 'catalytic activity', 'transporter activity'])} (Score: {random.uniform(0.6,0.95):.2f})"],
@@ -548,6 +563,26 @@ def generate_mock_functional_prediction_data(sequence_length, domains_data):
         ec_number = f"{random.randint(1,6)}.{random.randint(1,20)}.{random.randint(1,20)}.{random.randint(1,100)}"
 
     return {"go_terms": go_terms, "ec_number": ec_number, "predicted_pathways_mock": [random.choice(["Glycolysis", "Citric Acid Cycle", "MAPK signaling", "Apoptosis", "DNA Repair"]) for _ in range(random.randint(0,2))]}
+
+def generate_mock_protein_family_prediction():
+    families = ["Kinase", "GPCR", "Ion Channel", "Transcription Factor", "Enzyme (Hydrolase)", "Structural Protein"]
+    superfamilies = ["Protein Kinase Superfamily", "G Protein-Coupled Receptor Family", "Ligand-Gated Ion Channel Family", "Helix-Turn-Helix Transcription Factors", "Hydrolase Superfamily", "Cytoskeletal Proteins"]
+    return {
+        "Family_Mock": random.choice(families),
+        "Superfamily_Mock": random.choice(superfamilies),
+        "Confidence_Score_Mock": round(random.uniform(0.7, 0.99), 2),
+        "Method_Mock": random.choice(["Sequence Homology", "Structural Similarity", "Domain Content"])
+    }
+
+def generate_mock_subcellular_localization():
+    locations = ["Cytoplasm", "Nucleus", "Mitochondrion", "Endoplasmic Reticulum", "Golgi Apparatus", "Plasma Membrane", "Extracellular"]
+    return {
+        "Predicted_Location_Mock": random.choice(locations),
+        "Confidence_Score_Mock": round(random.uniform(0.6, 0.95), 2),
+        "Top_Locations_Mock": random.sample(locations, k=random.randint(1,3)),
+        "Method_Mock": random.choice(["Sequence Features", "Domain Content", "Signal Peptides"])
+    }
+
 
 def generate_mock_contact_map_data(sequence_length):
     contacts = np.random.rand(sequence_length, sequence_length) < 0.05 # 5% chance of contact
@@ -2890,6 +2925,30 @@ if st.session_state.current_prediction:
         st.markdown("---")
         st.markdown("_Note: NMR spectra are mock-generated. Real NMR requires experimental data and specialized processing software._")
 
+        with st.expander("📊 Chemical Shift Deviation Analysis (Mock)"):
+            st.info("Compares predicted chemical shifts to expected values (e.g., random coil shifts) to identify residues in non-standard conformations.")
+            df_csd = generate_mock_chemical_shift_deviations(sequence_length)
+            st.dataframe(df_csd.head(), use_container_width=True)
+            
+            fig_csd = px.line(df_csd, x="Residue_Index", y="Calpha_Deviation_ppm_Mock",
+                              title="Mock Cα Chemical Shift Deviations",
+                              labels={"Calpha_Deviation_ppm_Mock": "Cα Deviation (ppm)"})
+            fig_csd.add_hline(y=0, line_dash="dash", line_color="grey")
+            st.plotly_chart(fig_csd, use_container_width=True)
+            st.markdown("Significant deviations (> ~1 ppm) can indicate secondary structure elements or unusual conformations.")
+
+        with st.expander("📈 Peak Integration Analysis (Mock)"):
+            st.info("In experimental NMR, peak integration relates to the number of nuclei contributing to a signal. This mock analysis shows expected 'integrated intensity' based on amino acid composition.")
+            df_integration = generate_mock_peak_integration_data(sequence_length)
+            st.dataframe(df_integration, use_container_width=True)
+            
+            fig_integration = px.bar(df_integration, x="Amino_Acid", y="Integrated_Intensity_Mock",
+                                     title="Mock NMR Peak Integration by Amino Acid Type",
+                                     labels={"Integrated_Intensity_Mock": "Integrated Intensity (Arbitrary Units)"})
+            st.plotly_chart(fig_integration, use_container_width=True)
+            st.markdown("This is a simplified representation. Real NMR peak integration is complex and depends on many factors.")
+
+
     with tab_map["SAX"]:
         st.subheader("SAXS Profile Analysis (Mock)")
         df_saxs, rg_saxs_mock = generate_mock_saxs_profile() # Re-use existing function
@@ -2906,6 +2965,30 @@ if st.session_state.current_prediction:
         st.markdown("---")
         st.markdown("_Note: SAXS profiles are mock-generated. Real SAXS analysis involves experimental scattering data and modeling._")
 
+        with st.expander("📉 Pair Distribution Function (PDF) Analysis (Mock)"):
+            st.info("The Pair Distribution Function (PDF) is derived from the SAXS profile and provides information about the distribution of distances between atoms within the protein.")
+            # Simulate a mock PDF
+            r_values = np.linspace(0, rg_saxs_mock * random.uniform(2.5, 3.5), 100) # Distance range up to Dmax
+            p_r = np.exp(-((r_values - rg_saxs_mock)**2) / (2 * (rg_saxs_mock/5)**2)) * random.uniform(10, 50) # Gaussian-like peak around Rg
+            p_r[r_values < 0] = 0
+            p_r[r_values > r_values.max()] = 0
+            p_r += np.random.normal(0, 1, len(r_values)) # Add noise
+            p_r = np.clip(p_r, 0, None) # Ensure non-negative
+
+            fig_pdf = px.line(x=r_values, y=p_r, title="Mock Pair Distribution Function (P(r))",
+                              labels={'x':'Distance (r, Å)', 'y':'P(r) (Arbitrary Units)'})
+            st.plotly_chart(fig_pdf, use_container_width=True)
+            st.markdown("The P(r) function peaks around the Radius of Gyration (Rg) and drops to zero at the maximum particle dimension (Dmax).")
+
+        with st.expander("⚖️ Molecular Weight Estimation from SAXS (Mock)"):
+            st.info("Molecular weight can be estimated from the intensity of the SAXS profile at zero angle (I(0)).")
+            # Mock MW estimation based on Rg and sequence length
+            mock_mw_saxs = len(data.get('sequence', '')) * random.uniform(100, 120) * random.uniform(0.8, 1.2) # Approx MW from sequence + noise
+            st.metric(label="Estimated Molecular Weight (SAXS Mock)", value=f"{mock_mw_saxs:.0f} Da")
+            st.markdown("This estimation is sensitive to data quality and aggregation. It can help confirm the oligomeric state.")
+
+
+
     with tab_map["CRF"]:
         st.subheader("Cryo-EM Map Fitting Analysis (Mock)")
         cryo_fit_data = generate_mock_cryoem_fit() # Re-use existing function
@@ -2918,6 +3001,30 @@ if st.session_state.current_prediction:
         st.markdown("---")
         st.markdown("_Note: Cryo-EM fit data is mock-generated. Real analysis requires an experimental density map and fitting software._")
 
+        with st.expander("🔍 Local Resolution Analysis (Mock)"):
+            st.info("Cryo-EM maps often have varying resolution across the structure. This analysis highlights regions with higher or lower local resolution.")
+            # Simulate local resolution variation
+            seq_len_crf = data.get('length', 100)
+            local_resolution = np.random.normal(loc=cryo_fit_data['Resolution_Angstrom_Mock'], scale=1.0, size=seq_len_crf)
+            # Add some regions with worse resolution (e.g., flexible loops)
+            for _ in range(seq_len_crf // 30):
+                start = random.randint(0, seq_len_crf - 10)
+                local_resolution[start:start+random.randint(5,10)] += random.uniform(1.0, 3.0)
+            local_resolution = np.clip(local_resolution, 1.5, 10.0)
+
+            fig_local_res = px.line(x=list(range(1, seq_len_crf + 1)), y=local_resolution,
+                                    title="Mock Local Resolution Profile (Cryo-EM Map)",
+                                    labels={'x':'Residue Index', 'y':'Local Resolution (Å)'})
+            fig_local_res.update_yaxes(autorange="reversed") # Lower resolution is worse (higher value)
+            st.plotly_chart(fig_local_res, use_container_width=True)
+            st.markdown("Regions with higher local resolution (lower Å value) are more clearly defined in the map.")
+
+        with st.expander("🏅 Model Validation Metrics (Cryo-EM Mock)"):
+            st.info("Additional metrics used to validate the fitted atomic model against the Cryo-EM map.")
+            st.metric(label="Model-to-Map FSC at 0.5 (Mock)", value=f"{random.uniform(0.6, 0.9):.2f}")
+            st.metric(label="Overall Q-score (Mock)", value=f"{random.uniform(0.5, 0.8):.2f}", help="Measures the local fit of atoms to density. Higher is better.")
+            st.markdown("These metrics provide quantitative assessment of the model-to-map agreement.")
+
     with tab_map["XTP"]:
         st.subheader("Crystallization Propensity Analysis (Mock)")
         crystallization_data = generate_mock_crystallization_propensity() # Re-use existing function
@@ -2927,6 +3034,30 @@ if st.session_state.current_prediction:
         st.markdown("Estimates the likelihood of a protein to form well-ordered crystals, based on surface properties like hydrophobicity, charge distribution, and conformational homogeneity. This is crucial for X-ray crystallography.")
         st.markdown("---")
         st.markdown("_Note: Crystallization propensity is mock-generated. Real prediction uses tools like XtalPred, SERp, or Surface Entropy Reduction analysis._")
+
+        with st.expander("⚡ Surface Charge Distribution Analysis (Mock)"):
+            st.info("Analyzes the distribution of positive and negative charges on the protein surface, which can influence crystal packing contacts.")
+            mock_charge_density = round(random.uniform(-0.5, 0.5), 2)
+            st.metric(label="Overall Surface Charge Density (Mock)", value=f"{mock_charge_density:.2f}")
+            st.markdown(f"**Key Charged Patches (Mock):**")
+            st.markdown(f"- Large positive patch near residues {random.randint(1,50)}-{random.randint(51,100)}.")
+            st.markdown(f"- Large negative patch near residues {random.randint(101,150)}-{random.randint(151,200)}.")
+            st.markdown("Charged patches can mediate crystal contacts, and their distribution is important for crystallization.")
+
+        with st.expander("🌀 Conformational Flexibility Assessment (Mock)"):
+            st.info("Estimates the overall flexibility of the protein, as highly flexible proteins can be difficult to crystallize.")
+            # Mock flexibility score based on disorder and pLDDT variance
+            disorder_pct = np.mean(data.get('disorder', [0])) * 100
+            plddt_variance = np.var(data.get('plddt', [0]))
+            mock_flexibility_score = round((disorder_pct * 0.5 + plddt_variance * 0.1) / 20, 2) # Simplified formula
+            mock_flexibility_score = np.clip(mock_flexibility_score, 0.1, 0.9)
+
+            st.metric(label="Predicted Conformational Flexibility Score (Mock)", value=f"{mock_flexibility_score:.2f}", help="Higher score indicates higher flexibility.")
+            if mock_flexibility_score > 0.6:
+                st.warning("Predicted flexibility is high, which may hinder crystallization.")
+            else:
+                st.info("Predicted flexibility is moderate to low, favorable for crystallization.")
+            st.markdown("High flexibility can lead to heterogeneous protein samples, making crystal formation challenging.")
 
     with tab_map["FUNC"]:
         st.subheader("Functional Prediction & Annotation")
@@ -2956,6 +3087,22 @@ if st.session_state.current_prediction:
             st.info("No specific pathways strongly predicted.")
         st.markdown("---")
         st.markdown("_Note: Functional predictions are mock-generated. Real annotation uses tools like InterProScan, eggNOG-mapper, BLAST against curated databases (UniProt, GO, KEGG)._")
+
+        with st.expander("🧬 Protein Family & Superfamily Prediction (Mock)"):
+            st.info("Predicts the protein family and superfamily based on sequence and structural features.")
+            family_data = generate_mock_protein_family_prediction()
+            st.metric(label="Predicted Family (Mock)", value=family_data['Family_Mock'])
+            st.metric(label="Predicted Superfamily (Mock)", value=family_data['Superfamily_Mock'])
+            st.markdown(f"**Confidence (Mock):** {family_data['Confidence_Score_Mock']:.2f}")
+            st.markdown(f"**Method (Mock):** {family_data['Method_Mock']}")
+            st.markdown("Protein family and superfamily classification provides broad functional and evolutionary context.")
+
+        with st.expander("📍 Subcellular Localization Prediction (Mock)"):
+            st.info("Predicts the most likely location of the protein within the cell.")
+            localization_data = generate_mock_subcellular_localization()
+            st.metric(label="Predicted Subcellular Location (Mock)", value=localization_data['Predicted_Location_Mock'])
+            st.markdown(f"**Confidence (Mock):** {localization_data['Confidence_Score_Mock']:.2f}")
+            st.markdown(f"**Top Predicted Locations (Mock):** {', '.join(localization_data['Top_Locations_Mock'])}")
 
     # This was originally tab5, now it's the last tab
     with tab_map["DATA"]:
