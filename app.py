@@ -968,10 +968,10 @@ if st.session_state.current_prediction:
         "DRUG": "🎯 Druggability Analysis", # Shrunk from DRUGGABLE
         "CONS": "🛡️ Conservation Score",   # Shrunk from CONSERVE
         # New tabs inserted here
-        "NMR_S": "📡 NMR Spectra (Mock)",
-        "SAXS_P": "✨ SAXS Profile (Mock)",
-        "CRYO_F": "🧊 Cryo-EM Fit (Mock)",
-        "XTAL_P": "❄️ Crystallization (Mock)",
+        "NMR_S": "📡 NMR Spectra",
+        "SAXS_P": "✨ SAXS Profile",
+        "CRYO_F": "🧊 Cryo-EM Fit",
+        "XTAL_P": "❄️ Crystallization",
         "DATA": "📋 Detailed Data"
     }
     
