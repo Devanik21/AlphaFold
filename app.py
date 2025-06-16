@@ -3147,7 +3147,7 @@ if st.session_state.current_prediction:
 else:
     # Welcome screen
     st.markdown("""
-    ## 🔬 Welcome to AlphaFold Pro
+    ## 🔬 Welcome to AlphaFold 
     
     **Advanced Protein Structure Prediction Suite**
     
