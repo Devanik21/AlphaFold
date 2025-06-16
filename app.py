@@ -21,7 +21,7 @@ from statsmodels.tsa.stattools import acf
 # Configure page
 st.set_page_config(
     layout="wide", 
-    page_title="AlphaFold Pro - Protein Structure Prediction Suite",
+    page_title="AlphaFold - Protein Structure Prediction Suite",
     page_icon="🧬",
     initial_sidebar_state="expanded"
 )
