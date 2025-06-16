@@ -217,6 +217,45 @@ def generate_mock_mutational_data(sequence_length, num_mutations=10):
         })
     return pd.DataFrame(mutations)
 
+def generate_mock_protein_symmetry_data():
+    symmetry_type = random.choice(["None", "C2", "C3", "C4", "D2", "D3", "Icosahedral (mock)"])
+    if symmetry_type == "None":
+        return {"type": "None", "axis": "N/A", "confidence": 0.0}
+    return {
+        "type": symmetry_type,
+        "axis": random.choice(["X-axis", "Y-axis", "Z-axis", "Diagonal"]),
+        "confidence": round(random.uniform(0.6, 0.98), 2)
+    }
+
+def generate_mock_coevolution_contacts(sequence_length, num_contacts_factor=0.02):
+    num_contacts = int(sequence_length * num_contacts_factor * random.uniform(0.5, 1.5))
+    contacts = []
+    if sequence_length < 5: return pd.DataFrame()
+    for _ in range(num_contacts):
+        res1, res2 = sorted(random.sample(range(1, sequence_length + 1), 2))
+        contacts.append({
+            "Residue_1": res1,
+            "Residue_2": res2,
+            "Coevolution_Score": round(random.uniform(0.3, 0.95), 3),
+            "Distance_Prediction_Mock_Angstrom": round(random.uniform(4.0, 15.0), 1)
+        })
+    return pd.DataFrame(contacts).sort_values(by="Coevolution_Score", ascending=False)
+
+def generate_mock_structural_waters(num_waters_factor=0.1):
+    num_waters = int(random.uniform(5, 20) * num_waters_factor) # Simplified
+    waters = []
+    for i in range(num_waters):
+        waters.append({
+            "Water_ID": f"HOH_{i+1}",
+            "X_Coord_Mock": round(random.uniform(-20, 20), 2),
+            "Y_Coord_Mock": round(random.uniform(-20, 20), 2),
+            "Z_Coord_Mock": round(random.uniform(-20, 20), 2),
+            "B_Factor_Mock": round(random.uniform(10, 60), 1),
+            "Occupancy_Mock": round(random.uniform(0.8, 1.0), 2),
+            "Bridging_Residues_Mock": f"R{random.randint(1,50)}-D{random.randint(51,100)}" if random.random() > 0.5 else "None"
+        })
+    return pd.DataFrame(waters)
+
 def generate_mock_ligand_pockets(sequence_length, num_pockets=3):
     pockets = []
     for i in range(num_pockets):
@@ -285,6 +324,16 @@ def generate_mock_allosteric_sites(sequence_length, num_sites=2):
             "avg_conservation_mock": round(random.uniform(0.2, 0.95), 2) # Mock conservation score for the site
         })
     return sites
+
+def generate_mock_pore_profile(channel_length_residues=50):
+    # Simulate a pore along Z-axis, length in Angstroms
+    z_coords = np.linspace(0, channel_length_residues * 1.5, 50) # Approx 1.5A per residue length in helix
+    # Simulate a narrowing and widening pore
+    radius = 5 * np.sin(z_coords / (channel_length_residues*1.5/np.pi) * 2) + \
+             2 * np.cos(z_coords / (channel_length_residues*1.5/np.pi) * 5) + \
+             random.uniform(1.5, 4) # Base radius
+    radius = np.clip(radius, 0.5, 10) # Min/max radius
+    return pd.DataFrame({"Position_Angstrom": np.round(z_coords,1), "Radius_Angstrom": np.round(radius,1)})
 
 def generate_mock_protein_symmetry_data():
     symmetry_type = random.choice(["None", "C2", "C3", "C4", "D2", "D3", "Icosahedral (mock)"])
@@ -1311,6 +1360,48 @@ if st.session_state.current_prediction:
             dipole_magnitude_mock = round(random.uniform(50, 500) * (data.get('length',100)/100.0), 0)
             st.metric(label="Calculated Dipole Moment Magnitude (Mock)", value=f"{dipole_magnitude_mock} Debye")
             st.markdown("Calculates the overall electric dipole moment of the protein, which can influence interactions with other molecules and behavior in electric fields.")
+
+        with st.expander("💠 Protein Symmetry Detection"):
+            symmetry_data = generate_mock_protein_symmetry_data()
+            st.metric(label="Predicted Symmetry Type (Mock)", value=symmetry_data['type'])
+            if symmetry_data['type'] != "None":
+                st.markdown(f"**Symmetry Axis (Mock):** {symmetry_data['axis']}")
+                st.markdown(f"**Confidence (Mock):** {symmetry_data['confidence']:.2f}")
+            st.markdown("Detects internal repeats or symmetry in oligomeric assemblies (if applicable).")
+
+        with st.expander("💞 Co-evolutionary Contact Prediction Mapping"):
+            df_coevo = generate_mock_coevolution_contacts(data.get('length', 100))
+            if not df_coevo.empty:
+                st.dataframe(df_coevo.head(), use_container_width=True)
+                st.markdown("Predicted residue pairs that co-evolve, suggesting spatial proximity or functional interaction. These can guide 3D folding or identify interaction sites.")
+            else:
+                st.info("No significant co-evolutionary contacts predicted (mock data).")
+
+        with st.expander("💦 Structural Water Molecule Prediction"):
+            df_waters = generate_mock_structural_waters()
+            st.metric(label="Predicted Structural Waters (Mock)", value=len(df_waters))
+            if not df_waters.empty:
+                st.dataframe(df_waters.head(), use_container_width=True)
+                st.markdown("Predicts positions of water molecules that are integral to the protein's structure or function, often found in active sites or mediating interactions.")
+            else:
+                st.info("No significant structural waters predicted (mock data).")
+
+        with st.expander("🚇 Ion Channel Pore Radius Profiling"):
+            if data.get('length', 100) > 50 and random.random() < 0.2: # Simulate it being a channel protein
+                df_pore = generate_mock_pore_profile(data.get('length',100))
+                fig_pore = px.line(df_pore, x="Position_Angstrom", y="Radius_Angstrom",
+                                   title="Mock Ion Channel Pore Radius Profile",
+                                   labels={"Position_Angstrom": "Position along Pore Axis (Å)", "Radius_Angstrom": "Pore Radius (Å)"})
+                st.plotly_chart(fig_pore, use_container_width=True)
+                st.metric(label="Minimum Pore Radius (Mock)", value=f"{df_pore['Radius_Angstrom'].min():.1f} Å")
+                st.markdown("For transmembrane channel proteins, this visualizes the dimensions of the pore, identifying constrictions and selectivity filters.")
+            else:
+                st.info("Protein not predicted as a channel or insufficient data for pore profiling (mock).")
+
+        # --- End of newly added tools ---
+
+
+
 
         with st.expander("📖 Rotamer Library Analysis"):
             rotamer_data = generate_mock_rotamer_analysis(data.get('length',100))
