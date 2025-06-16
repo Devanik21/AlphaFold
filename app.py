@@ -975,6 +975,7 @@ if st.session_state.current_prediction:
         "DATA": "📋 Detailed Data"
     }
     
+    tab_keys = list(TAB_CODES.keys())
     # Unpack all tabs based on the order in TAB_CODES
     tabs_list = st.tabs(tab_keys)
     
