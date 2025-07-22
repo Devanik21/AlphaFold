@@ -1,2 +1,2 @@
-# AlphaFold
+# AlphaFold - powered by Gemini 
 
