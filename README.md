@@ -117,7 +117,7 @@ statsmodels>=0.14.0
 (Integrated within application)
 ```
 
-### System Architecture
+### Proposed System Architecture(beta)
 ```
 AlphaFold Replica/
 ├── core/
