@@ -1,5 +1,5 @@
 # AlphaFold - powered by Gemini - Replica 🧬
-
+ 
 ## DeepMind-Inspired Protein Structure Prediction Suite
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://python.org)
