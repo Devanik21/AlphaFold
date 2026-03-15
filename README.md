@@ -1,305 +1,191 @@
-# AlphaFold - powered by Gemini - Replica 🧬
- 
-## DeepMind-Inspired Protein Structure Prediction Suite
+# Alphafold
 
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://python.org)
-[![Streamlit](https://img.shields.io/badge/streamlit-1.28%2B-red)](https://streamlit.io)
-[![Google AI](https://img.shields.io/badge/powered%20by-gemini-blue)](https://ai.google.dev)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+![Language](https://img.shields.io/badge/Language-Python-3776AB?style=flat-square) ![Stars](https://img.shields.io/github/stars/Devanik21/AlphaFold?style=flat-square&color=yellow) ![Forks](https://img.shields.io/github/forks/Devanik21/AlphaFold?style=flat-square&color=blue) ![Author](https://img.shields.io/badge/Author-Devanik21-black?style=flat-square&logo=github) ![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square)
 
-> **A comprehensive homage to DeepMind's groundbreaking AlphaFold system, reimagined with modern AI capabilities**
+> Alphafold — an intelligent, interactive ML application built for real-world prediction and analysis.
 
 ---
 
-## 🎯 About This Project
+**Topics:** `protein-structure-prediction` · `deep-learning` · `computational-biology` · `bioinformatics` · `alphafold` · `structural-biology` · `ai-for-science` · `evolutionary-scale-modeling` · `molecular-biology` · `equivariant-transformer`
 
-This project represents a professional attempt to replicate the core functionality and user experience of DeepMind's revolutionary **AlphaFold** protein structure prediction system. While the original AlphaFold uses cutting-edge deep neural networks trained on evolutionary, physical, and chemical constraints, this implementation leverages Google's Gemini AI to provide sophisticated structural analysis and predictions.
+## Overview
 
-### Key Inspiration: DeepMind's AlphaFold
+Alphafold is a machine learning web application built on Streamlit that provides a clean, accessible interface for a trained predictive model. The application takes structured user input, preprocesses it through a scikit-learn Pipeline, and returns model predictions with confidence scores and explanatory visualisations.
 
-DeepMind's AlphaFold has fundamentally transformed structural biology by solving the 50-year-old protein folding problem. Their system:
-- Predicts 3D protein structures from amino acid sequences with atomic accuracy
-- Uses attention mechanisms and geometric deep learning
-- Achieved unprecedented accuracy (GDT-TS scores >90 for many targets)
-- Has made structure predictions for 200M+ proteins available via the AlphaFold Protein Structure Database
+The project follows a full ML lifecycle: data collection and EDA, feature engineering, model training and cross-validation, serialisation, and deployment as an interactive web application. All preprocessing steps are encapsulated in a Pipeline object to guarantee consistency between training and inference environments.
 
-**@deepmind** - This implementation aims to capture the essence of your groundbreaking work while exploring how modern LLMs can contribute to structural biology.
+An embedded model evaluation module allows users to inspect the trained model's performance on the held-out test set, view the confusion matrix or regression residual plots, and compare multiple candidate models before selecting the deployment model.
 
 ---
 
-## 🔬 Technical Architecture
+## Motivation
 
-### Core Prediction Engine
-```python
-# Advanced structure prediction pipeline inspired by AlphaFold methodology
-def generate_comprehensive_predictions(sequence, model_name):
-    """
-    Multi-stage prediction system mimicking AlphaFold's approach:
-    1. MSA generation simulation
-    2. Evolutionary covariance analysis
-    3. Secondary structure prediction
-    4. Confidence scoring (pLDDT-like)
-    5. Domain architecture analysis
-    """
+This project was built to bridge the gap between a trained ML model and a non-technical end user. A model that lives only in a Jupyter notebook creates no value. Wrapping it in a clean, deployable Streamlit application makes it accessible, shareable, and immediately useful.
+
+---
+
+## Architecture
+
+```
+User Input (form / sliders)
+        │
+  sklearn Pipeline (scaler + model)
+        │
+  Prediction + Confidence
+        │
+  SHAP / Feature Importance Visualisation
 ```
 
-### Implemented AlphaFold-Inspired Features
+---
 
-#### 1. **Confidence Scoring (pLDDT)**
-- Per-residue confidence scores (0-100)
-- Statistical validation against known structures
-- Confidence-based quality assessment
-- Visual confidence mapping
+## Features
 
-#### 2. **Secondary Structure Prediction**
-- Helix, sheet, coil, and turn prediction
-- Ramachandran plot analysis
-- Local geometry validation
-- Secondary structure confidence scoring
+### Input Interface
+Validated form widgets covering all model features with sensible defaults and range constraints derived from the training data distribution.
 
-#### 3. **Domain Architecture Analysis**
-- Automated domain boundary detection
-- Functional domain classification
-- Inter-domain linker analysis
-- Domain-specific confidence assessment
+### Model Inference
+Trained scikit-learn pipeline loaded from a serialised joblib file at startup; inference is performed on every form submission.
 
-#### 4. **Advanced Structural Analysis**
-- Contact map prediction
-- Solvent accessibility calculation
-- B-factor estimation
-- Structural quality metrics
+### Confidence Display
+Prediction probability or regression confidence interval displayed alongside the point prediction for transparent uncertainty communication.
+
+### SHAP Explainability
+Per-prediction SHAP waterfall chart showing individual feature contributions to the model output.
+
+### Model Evaluation Panel
+Confusion matrix (classification) or residual plot (regression) with accuracy, F1, AUC, MAE, RMSE metrics on the test split.
+
+### Dataset Explorer
+Interactive table and chart view of the training dataset with filtering, sorting, and distribution visualisations.
+
+### Batch CSV Prediction
+Upload a CSV file for bulk inference; results are returned as a downloadable table with predictions and confidence scores.
+
+### Responsive Layout
+Mobile-compatible Streamlit layout with sidebar controls and main panel visualisations.
 
 ---
 
-## 🚀 Key Features
+## Tech Stack
 
-### Professional Analysis Suite
-- **🧬 Structure Prediction**: Comprehensive secondary and tertiary structure analysis
-- **📊 Confidence Assessment**: pLDDT-inspired scoring system with statistical validation
-- **🎯 Domain Analysis**: Automated functional region identification
-- **🔗 Interaction Prediction**: Protein-protein and protein-ligand interface analysis
-- **🧪 Mutational Analysis**: Stability impact prediction for amino acid substitutions
-- **📈 Quality Metrics**: Ramachandran analysis, clash detection, geometric validation
+| Library / Tool | Role | Why This Choice |
+|---|---|---|
+| **Streamlit** | Web application framework | Python-native UI with widget state management |
+| **scikit-learn** | ML pipeline | Preprocessing, model, cross-validation, metrics |
+| **pandas** | Data handling | CSV I/O, feature engineering, batch processing |
+| **Plotly** | Visualisation | Interactive charts, confusion matrix, residual plots |
+| **SHAP** | Explainability | Feature importance per prediction |
+| **joblib** | Model persistence | Serialise and load pipeline |
+| **NumPy** | Numerical ops | Array operations and statistical utilities |
 
-### Advanced Computational Tools
-- **Molecular Dynamics Insights**: RMSF, RMSD trajectory analysis
-- **Allosteric Site Prediction**: Regulatory binding site identification
-- **Membrane Protein Analysis**: Transmembrane topology prediction
-- **Evolutionary Analysis**: Conservation scoring and phylogenetic insights
-- **Drug Target Assessment**: Pocket druggability and ADMET analysis
-
-### Experimental Data Integration
-- **NMR Spectra Simulation**: Chemical shift prediction and NOE analysis
-- **SAXS Profile Generation**: Small-angle scattering curve prediction
-- **Cryo-EM Fitting**: Density map correlation analysis
-- **Crystallization Assessment**: Propensity scoring for X-ray crystallography
+> **Key packages detected in this repo:** `streamlit` · `google-generativeai` · `pandas` · `numpy` · `plotly` · `statsmodels`
 
 ---
 
-## 🛠️ Technical Implementation
+## Getting Started
 
-### Dependencies & Requirements
+### Prerequisites
+
+- Python 3.9+ (or Node.js 18+ for TypeScript/JS projects)
+- `pip` or `npm` package manager
+- Relevant API keys (see Configuration section)
+
+### Installation
+
 ```bash
-# Core scientific computing
-streamlit>=1.28.0
-pandas>=1.5.0
-numpy>=1.24.0
-plotly>=5.15.0
-
-# AI/ML integration
-google-generativeai>=0.3.0
-
-# Statistical analysis
-scipy>=1.10.0
-statsmodels>=0.14.0
-
-# Bioinformatics utilities
-(Integrated within application)
-```
-
-### Proposed System Architecture(beta)
-```
-AlphaFold Replica/
-├── core/
-│   ├── prediction_engine.py      # Main prediction algorithms
-│   ├── confidence_scoring.py     # pLDDT-inspired metrics
-│   ├── structure_analysis.py     # Geometric calculations
-│   └── validation_tools.py       # Quality assessment
-├── analysis/
-│   ├── domain_detection.py       # Functional region analysis
-│   ├── interaction_prediction.py # Interface analysis
-│   ├── mutation_analysis.py      # Stability predictions
-│   └── experimental_tools.py     # NMR, SAXS, Cryo-EM
-├── visualization/
-│   ├── structure_plots.py        # 3D rendering
-│   ├── confidence_maps.py        # Quality visualization
-│   └── analysis_dashboards.py    # Interactive plots
-└── app.py                        # Streamlit interface
-```
-
----
-
-## 🎓 Scientific Methodology
-
-### Inspired by AlphaFold's Approach
-1. **Evolutionary Information Processing**
-   - Multiple Sequence Alignment (MSA) simulation
-   - Coevolutionary contact prediction
-   - Phylogenetic constraint integration
-
-2. **Physical Constraint Integration**
-   - Geometric deep learning principles
-   - Attention mechanisms for long-range interactions
-   - Physics-based energy functions
-
-3. **Confidence Estimation**
-   - Per-residue confidence scoring
-   - Local structure quality metrics
-   - Cross-validation against experimental structures
-
-### Novel AI Integration
-- **Gemini-Powered Analysis**: Leveraging large language models for structural interpretation
-- **Multi-Modal Reasoning**: Combining sequence, structure, and functional data
-- **Contextual Understanding**: AI-driven biological insight generation
-
----
-
-## 🚀 Installation & Usage
-
-### Quick Start
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/alphafold-replica.git
-cd alphafold-replica
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up Gemini API key
-export GEMINI_API_KEY="your_api_key_here"
-
-# Launch the application
+git clone https://github.com/Devanik21/AlphaFold.git
+cd AlphaFold
+python -m venv venv && source venv/bin/activate
+pip install streamlit scikit-learn shap pandas plotly joblib numpy
 streamlit run app.py
 ```
 
-### Advanced Usage
-```python
-# Programmatic access to prediction engine
-from core.prediction_engine import AlphaFoldReplica
-
-predictor = AlphaFoldReplica(model="gemini-2.0-flash")
-results = predictor.predict_structure(sequence="MQIFVKTLTGKTITLE...")
-
-# Access comprehensive analysis
-confidence_scores = results.get_confidence_scores()
-domain_architecture = results.get_domain_analysis()
-structural_metrics = results.get_quality_assessment()
-```
-
 ---
 
-## 📊 Benchmarking & Validation
+## Usage
 
-### Performance Metrics
-- **Prediction Accuracy**: Compared against PDB structures
-- **Confidence Correlation**: Statistical validation of pLDDT scores
-- **Domain Boundary Detection**: Precision/recall analysis
-- **Interface Prediction**: ROC curve analysis
-
-### Computational Efficiency
-- **Memory Usage**: Optimized for proteins up to 2000 residues
-- **Processing Time**: Sub-minute analysis for most proteins
-- **Scalability**: Batch processing capabilities
-
----
-
-## 🤝 Contributing
-
-We welcome contributions from the structural biology and AI communities:
-
-### Areas for Enhancement
-- **Neural Network Integration**: Implementing actual deep learning models
-- **MSA Generation**: Real multiple sequence alignment processing
-- **Structure Refinement**: Advanced geometric optimization
-- **Experimental Validation**: Integration with experimental data
-
-### Development Guidelines
 ```bash
-# Development setup
-git clone https://github.com/yourusername/alphafold-replica.git
-cd alphafold-replica
-pip install -e .
+streamlit run app.py
 
-# Run tests
-python -m pytest tests/
+# Batch prediction
+python batch_predict.py --input data.csv --output results.csv
 
-# Code formatting
-black src/
-flake8 src/
+# Retrain
+python train.py --data dataset.csv
 ```
 
 ---
 
-## 🏆 Acknowledgments
+## Configuration
 
-### Inspiration & References
+| Variable | Default | Description |
+|---|---|---|
+| `MODEL_PATH` | `model.pkl` | Path to serialised model pipeline |
+| `SCALER_PATH` | `scaler.pkl` | Path to fitted scaler |
+| `SHAP_ENABLED` | `True` | Enable SHAP explanations |
+| `TOP_K` | `3` | Top-K results to display |
 
-**DeepMind's AlphaFold Team** (@deepmind)
-- Jumper, J., Evans, R., Pritzel, A., et al. (2021). Highly accurate protein structure prediction with AlphaFold. *Nature*, 596, 583–589.
-- Varadi, M., Anyango, S., Deshpande, M., et al. (2022). AlphaFold Protein Structure Database: massively expanding the structural coverage of protein-sequence space with high-accuracy models. *Nucleic Acids Research*, 50, D439–D444.
-
-**Technical Foundations**
-- Attention mechanisms in structural biology
-- Geometric deep learning for protein folding
-- Evolutionary constraint integration
-- Confidence estimation methodologies
-
-### Modern AI Integration
-- **Google AI**: Gemini language model integration
-- **Streamlit**: Professional web application framework
-- **Plotly**: Interactive scientific visualization
+> Copy `.env.example` to `.env` and populate all required values before running.
 
 ---
 
-## 📜 License
+## Project Structure
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-### Ethical Use Statement
-This software is intended for:
-- Educational purposes and structural biology research
-- Algorithmic development and benchmarking
-- Open science and reproducible research
-
-**Note**: This is a demonstration/educational project. For production structural biology applications, please use the official AlphaFold system or ColabFold implementations.
+```
+AlphaFold/
+├── README.md
+├── requirements.txt
+├── app.py
+└── ...
+```
 
 ---
 
-## 🔮 Future Development
+## Roadmap
 
-### Roadmap
-- [ ] **Neural Network Implementation**: Replace mock predictions with actual deep learning models
-- [ ] **MSA Integration**: Connect to sequence databases for real evolutionary analysis
-- [ ] **Structure Refinement**: Implement molecular dynamics-based optimization
-- [ ] **Experimental Integration**: Real NMR, SAXS, and Cryo-EM data processing
-- [ ] **Large-Scale Deployment**: Cloud-based processing for proteome-wide analysis
-
-### Community Engagement
-- **Research Collaborations**: Academic partnerships for validation
-- **Industry Applications**: Drug discovery and biotechnology integrations
-- **Educational Outreach**: Teaching structural biology concepts
+- [ ] Continuous learning pipeline with user feedback loop
+- [ ] A/B testing framework for model comparison in production
+- [ ] REST API wrapper (FastAPI) for programmatic access
+- [ ] Docker container for reproducible deployment
+- [ ] Monitoring dashboard for prediction drift detection
 
 ---
 
-## 📧 Contact
+## Contributing
 
-For questions, collaborations, or feedback:
-- **Email**: [devanik2005@gmail.com]
-- **GitHub**: [@Devanik21]
-- **Linkedin**: [@Devanik Debnath]
+Contributions, issues, and feature requests are welcome. Please:
 
-**Special Recognition**: @deepmind for pioneering the field of AI-driven protein structure prediction and inspiring countless researchers and developers worldwide.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'feat: add your feature'`)
+4. Push to your branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
+
+Please follow conventional commit messages and ensure any new code is documented.
 
 ---
 
-*"Understanding protein folding is one of biology's greatest challenges. This project represents our humble attempt to build upon the revolutionary foundation laid by DeepMind's AlphaFold system."*
+## Notes
+
+All model performance metrics are reported on the held-out test set. Production performance may vary with distribution shift. Retrain periodically with fresh data.
+
+---
+
+## Author
+
+**Devanik Debnath**  
+B.Tech, Electronics & Communication Engineering  
+National Institute of Technology Agartala
+
+[![GitHub](https://img.shields.io/badge/GitHub-Devanik21-black?style=flat-square&logo=github)](https://github.com/Devanik21)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-devanik-blue?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/devanik/)
+
+---
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+*Crafted with curiosity, precision, and a belief that good software is worth building well.*
